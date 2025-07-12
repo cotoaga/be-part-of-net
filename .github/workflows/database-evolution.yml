@@ -1,0 +1,25 @@
+name: Database Consciousness Evolution
+on:
+  push:
+    paths:
+      - 'supabase/migrations/**'
+    branches: [main]
+
+jobs:
+  evolve-schema:
+    name: Apply Consciousness Schema Evolution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+          
+      - name: Apply Reality Migrations
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
