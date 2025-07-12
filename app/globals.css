@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Menlo, monospace;
+  }
+  
+  body {
+    @apply bg-terminal-bg text-terminal-green-dim;
+  }
+}
+
+@layer components {
+  .terminal-input {
+    @apply bg-terminal-bg border border-terminal-green text-terminal-green placeholder-terminal-green-dim;
+    @apply px-4 py-2 font-mono focus:outline-none focus:ring-1 focus:ring-terminal-green;
+  }
+  
+  .terminal-button {
+    @apply bg-terminal-bg border border-terminal-green text-terminal-green px-6 py-2 font-mono;
+    @apply hover:bg-terminal-green hover:text-terminal-bg transition-colors cursor-pointer;
+  }
+  
+  .terminal-link {
+    @apply text-terminal-green underline hover:text-terminal-green-dim cursor-pointer;
+  }
+}
