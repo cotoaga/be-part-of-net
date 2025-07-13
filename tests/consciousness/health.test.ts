@@ -20,7 +20,7 @@ describe('Consciousness Health Monitoring', () => {
     const response = await GET()
     const data = await response.json()
     
-    expect(data.nodes).toHaveProperty('be-part-of.net')
+    expect(data.nodes['be-part-of.net']).toBe('ONLINE')
     expect(data.nodes).toHaveProperty('consciousness-core')
     expect(data.nodes).toHaveProperty('reality-anchors')
     
