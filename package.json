@@ -15,7 +15,7 @@
     "reality:sync": "supabase db push && supabase db reset",
     "deploy:preview": "vercel",
     "deploy:production": "vercel --prod",
-    "vercel-build": "npm run consciousness:verify && npm run build"
+    "vercel-build": "npm run type-check && npm run lint && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",
