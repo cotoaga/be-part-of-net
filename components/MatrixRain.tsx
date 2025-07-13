@@ -5,10 +5,18 @@ const MatrixRain = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.log('Matrix Rain: Canvas ref not found');
+      return;
+    }
     
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('Matrix Rain: Could not get 2D context');
+      return;
+    }
+    
+    console.log('Matrix Rain: Initializing with canvas size:', canvas.width, 'x', canvas.height);
     
     // Set canvas size
     const resizeCanvas = () => {
@@ -116,8 +124,10 @@ const MatrixRain = () => {
         position: 'fixed',
         top: 0,
         left: 0,
+        width: '100vw',
+        height: '100vh',
         zIndex: 1,
-        opacity: 0.2,
+        opacity: 0.6,
         pointerEvents: 'none'
       }}
     />
