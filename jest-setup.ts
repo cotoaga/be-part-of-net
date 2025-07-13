@@ -4,9 +4,31 @@ import '@testing-library/jest-dom'
 // Import Supabase mocks for all tests
 import './tests/mocks/supabase'
 
-global.Response = class Response {
+// Mock Response for API route testing
+(global as any).Response = class MockResponse {
   static json(data: any) {
-    return { json: () => Promise.resolve(data) }
+    return { 
+      json: () => Promise.resolve(data),
+      status: 200,
+      ok: true,
+      headers: new Map(),
+    }
+  }
+  
+  static error() {
+    return { 
+      json: () => Promise.reject(new Error('Response error')),
+      status: 500,
+      ok: false,
+    }
+  }
+  
+  static redirect(url: string, status = 302) {
+    return { 
+      status,
+      ok: status < 400,
+      headers: new Map([['Location', url]]),
+    }
   }
 }
 
