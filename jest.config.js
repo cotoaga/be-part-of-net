@@ -1,9 +1,6 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  testEnvironmentOptions: {
-    customExportConditions: ['development', 'node']
-  },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
@@ -11,15 +8,8 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: {
-        jsx: 'react'
+        jsx: 'react-jsx'
       }
     }]
-  },
-  globals: {
-    Response: class Response {
-      static json(data) {
-        return { json: () => Promise.resolve(data) }
-      }
-    }
   }
 };

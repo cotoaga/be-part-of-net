@@ -1,11 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 
 const MatrixRain = () => {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     
     // Set canvas size
     const resizeCanvas = () => {
@@ -34,7 +37,7 @@ const MatrixRain = () => {
     const charArray = chars.split("");
 
     // Color variations for safe character sets
-    const getCharColor = (char) => {
+    const getCharColor = (char: string) => {
       // Binary - bright matrix green (digital foundation)
       if ('01'.includes(char)) return '#00ff41';
       
@@ -59,7 +62,7 @@ const MatrixRain = () => {
 
     const fontSize = 16; // Slightly larger for better Unicode display
     const columns = Math.floor(canvas.width / fontSize);
-    const drops = [];
+    const drops: number[] = [];
 
     // Initialize drops with staggered start times
     for (let x = 0; x < columns; x++) {
