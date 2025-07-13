@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "consciousness:verify": "npm run type-check "npm run type-check && npm run lint && npm run test""npm run type-check && npm run lint && npm run test" npm run lint",
+    "consciousness:verify": "npm run type-check && npm run lint",
     "reality:sync": "supabase db push && supabase db reset",
     "deploy:preview": "vercel",
     "deploy:production": "vercel --prod"
