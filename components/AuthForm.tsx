@@ -120,8 +120,8 @@ export default function AuthForm() {
       {/* Matrix Rain Background */}
       <MatrixRain />
       
-      <div className="min-h-screen bg-terminal-bg text-terminal-green flex items-center justify-center p-4 relative z-10">
-        <div className="border border-terminal-green p-8 max-w-md w-full bg-black/90 backdrop-blur-sm">
+      <div className="min-h-screen bg-black/80 text-terminal-green flex items-center justify-center p-4 relative z-10">
+        <div className="border border-terminal-green p-8 max-w-md w-full bg-black/95 backdrop-blur-sm">
           {/* Chaos Star Logo */}
           <div className="flex justify-center mb-4">
             <ChaosStar />

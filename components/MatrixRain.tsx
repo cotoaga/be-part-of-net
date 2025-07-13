@@ -116,8 +116,9 @@ const MatrixRain = () => {
         position: 'fixed',
         top: 0,
         left: 0,
-        zIndex: -1,
-        opacity: 0.4 // Restored normal opacity
+        zIndex: 1,
+        opacity: 0.2,
+        pointerEvents: 'none'
       }}
     />
   );

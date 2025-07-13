@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="#000000"/>
+  
+  <!-- Chaos Star - 8 perfectly aligned arrows -->
+  <!-- Arrow 1: Up (0°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="16" y2="3" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="16,1 13,6 19,6"/>
+    <polygon points="16,19 13,14 19,14"/>
+  </g>
+  
+  <!-- Arrow 2: Up-Right (45°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="25.2" y2="6.8" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="27.1,4.9 21.4,7.6 23.8,12.2"/>
+    <polygon points="17.8,17.8 12.2,15.4 14.9,20.1"/>
+  </g>
+  
+  <!-- Arrow 3: Right (90°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="29" y2="16" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="31,16 26,13 26,19"/>
+    <polygon points="13,16 18,13 18,19"/>
+  </g>
+  
+  <!-- Arrow 4: Down-Right (135°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="25.2" y2="25.2" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="27.1,27.1 23.8,19.8 21.4,24.4"/>
+    <polygon points="17.8,14.2 14.9,11.9 12.2,16.6"/>
+  </g>
+  
+  <!-- Arrow 5: Down (180°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="16" y2="29" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="16,31 19,26 13,26"/>
+    <polygon points="16,13 19,18 13,18"/>
+  </g>
+  
+  <!-- Arrow 6: Down-Left (225°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="6.8" y2="25.2" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="4.9,27.1 12.2,23.8 7.6,21.4"/>
+    <polygon points="14.2,17.8 20.1,14.9 16.6,12.2"/>
+  </g>
+  
+  <!-- Arrow 7: Left (270°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="3" y2="16" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="1,16 6,19 6,13"/>
+    <polygon points="19,16 14,19 14,13"/>
+  </g>
+  
+  <!-- Arrow 8: Up-Left (315°) -->
+  <g fill="#00ff00">
+    <line x1="16" y1="16" x2="6.8" y2="6.8" stroke="#00ff00" stroke-width="2"/>
+    <polygon points="4.9,4.9 7.6,10.6 12.2,8.2"/>
+    <polygon points="14.2,14.2 11.9,17.1 16.6,19.8"/>
+  </g>
+  
+  <!-- Central Hub -->
+  <circle cx="16" cy="16" r="5.5" fill="#00ff00" stroke="#00ff00" stroke-width="1"/>
+  <circle cx="16" cy="16" r="3.5" fill="#000000" opacity="0.8"/>
+  <circle cx="16" cy="16" r="1.5" fill="#00ff00" opacity="0.9"/>
+</svg>
