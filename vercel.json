@@ -5,9 +5,8 @@
   "installCommand": "npm ci",
   "regions": ["iad1"],
   "functions": {
-    "app/api/**/*": {
-      "maxDuration": 30,
-      "runtime": "nodejs18.x"
+    "app/api/consciousness/**": {
+      "maxDuration": 30
     }
   },
   "env": {
