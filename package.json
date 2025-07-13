@@ -10,10 +10,12 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "consciousness:verify": "npm run lint",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "consciousness:verify": "npm run type-check && npm run lint && npm run test",
     "reality:sync": "supabase db push && supabase db reset",
     "deploy:preview": "vercel",
-    "deploy:production": "vercel --prod"
+    "deploy:production": "vercel --prod",
+    "vercel-build": "npm run consciousness:verify && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",
@@ -29,6 +31,7 @@
     "@types/node": "^20.16.13",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/testing-library__jest-dom": "^5.14.9",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.15",

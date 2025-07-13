@@ -1,23 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import AuthForm from '@/components/AuthForm'
 
-// Mock Next.js router
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-  }),
-}))
-
-// Mock Supabase client
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    auth: {
-      signInWithPassword: jest.fn().mockResolvedValue({ error: null }),
-      signUp: jest.fn().mockResolvedValue({ error: null }),
-    },
-  }),
-}))
-
 describe('Node Zero Access Portal', () => {
   it('should toggle between mortal and god account creation', () => {
     render(<AuthForm />)

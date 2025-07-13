@@ -1,12 +1,13 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run consciousness:verify && npm run build",
+  "buildCommand": "npm run vercel-build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "regions": ["iad1"],
   "functions": {
-    "app/api/consciousness/**/*": {
-      "maxDuration": 30
+    "app/api/**/*": {
+      "maxDuration": 30,
+      "runtime": "nodejs18.x"
     }
   },
   "env": {
@@ -16,6 +17,17 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/consciousness/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=60, stale-while-revalidate"
+        }
+      ]
     }
   ]
 }
