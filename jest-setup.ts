@@ -49,3 +49,22 @@ jest.mock('next/navigation', () => ({
 // Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+
+// Ensure NODE_ENV is set to test for React testing
+if (!process.env.NODE_ENV) {
+  (process.env as any).NODE_ENV = 'test'
+}
+
+// Mock React's act function for production builds
+jest.mock('react', () => {
+  const actualReact = jest.requireActual('react')
+  return {
+    ...actualReact,
+    act: jest.fn((callback) => {
+      if (typeof callback === 'function') {
+        callback()
+      }
+      return Promise.resolve()
+    }),
+  }
+})
