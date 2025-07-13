@@ -25,6 +25,9 @@ instructions/
 *.swo
 *~
 
+# Next
+.next/
+
 # Node.js (if applicable)
 node_modules/
 npm-debug.log*
@@ -45,3 +48,4 @@ venv/
 dist/
 build/
 *.egg-info/
+node_modules
