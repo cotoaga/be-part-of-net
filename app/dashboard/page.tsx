@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import MatrixRain from '@/components/MatrixRain'
 
 export default async function Dashboard() {
   const supabase = await createClient()
@@ -20,8 +21,9 @@ export default async function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-terminal-bg text-terminal-green p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-terminal-bg text-terminal-green p-8 relative">
+      <MatrixRain />
+      <div className="max-w-4xl mx-auto relative z-10">
         <header className="border-b border-terminal-green pb-4 mb-8">
           <h1 className="text-3xl font-mono text-center">
             NODE ZERO CONTROL CENTER
