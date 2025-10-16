@@ -170,11 +170,13 @@ export default function GraphVisualization() {
 
   // Handle node selection
   const handleNodeSelect = (nodeId: string) => {
+    console.log('Node selected:', nodeId)
     setSelectedNode(nodeId)
   }
 
   // Handle background click to deselect
   const handleBackgroundClick = () => {
+    console.log('Background clicked, selectedNode:', selectedNode)
     if (selectedNode) {
       setSelectedNode(null)
     }
@@ -229,7 +231,7 @@ export default function GraphVisualization() {
       {/* 3D Canvas */}
       <Canvas
         style={{ background: '#000000' }}
-        onClick={handleBackgroundClick}
+        onPointerMissed={handleBackgroundClick}
       >
         <Suspense fallback={null}>
           <PerspectiveCamera makeDefault position={[0, 0, 15]} />
