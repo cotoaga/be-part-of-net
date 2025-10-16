@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { ThreeEvent } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 interface Node3DProps {
@@ -97,15 +97,31 @@ export default function Node3D({
 
       {/* Label on hover */}
       {hovered && (
-        <Text
+        <Html
           position={[0, size * 1.5, 0]}
-          fontSize={0.3}
-          color="#10b981"
-          anchorX="center"
-          anchorY="bottom"
+          center
+          distanceFactor={10}
+          zIndexRange={[100, 0]}
+          style={{
+            color: '#10b981',
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            fontWeight: 'bold',
+            background: 'rgba(0, 0, 0, 0.85)',
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: '1px solid #10b981',
+            boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            whiteSpace: 'nowrap',
+            textShadow: '0 0 8px rgba(16, 185, 129, 0.8)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+          }}
         >
           {name}
-        </Text>
+        </Html>
       )}
     </group>
   )
