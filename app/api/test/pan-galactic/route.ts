@@ -155,7 +155,12 @@ export async function POST(request: Request) {
     if (nodesError) {
       console.error('Error inserting nodes:', nodesError)
       return NextResponse.json(
-        { error: 'Failed to create test nodes', details: nodesError },
+        {
+          error: 'Failed to create test nodes',
+          details: nodesError.message || nodesError,
+          code: nodesError.code,
+          hint: nodesError.hint
+        },
         { status: 500 }
       )
     }

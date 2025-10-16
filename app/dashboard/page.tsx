@@ -50,7 +50,12 @@ export default function Dashboard() {
           `You are now: ${data.stats.user_is_now}`
         )
       } else {
-        setTestModeMessage(`Error: ${data.error}`)
+        setTestModeMessage(
+          `Error: ${data.error}\n` +
+          (data.details ? `Details: ${data.details}\n` : '') +
+          (data.code ? `Code: ${data.code}\n` : '') +
+          (data.hint ? `Hint: ${data.hint}` : '')
+        )
       }
     } catch (error) {
       setTestModeMessage(`Error: ${error}`)
