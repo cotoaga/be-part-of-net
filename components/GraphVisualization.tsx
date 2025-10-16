@@ -1,16 +1,66 @@
 'use client'
 
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Node3D from './Node3D'
 import Edge3D from './Edge3D'
 import { useForceSimulation, SimulationNode } from './ForceSimulation'
+import * as THREE from 'three'
+import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
 interface GraphEdge {
   source: string
   target: string
+}
+
+// Camera configuration constants
+const INITIAL_CAMERA_DISTANCE = 15
+const CAMERA_LERP_FACTOR = 0.05 // Smooth factor: lower = smoother but slower
+
+// Camera animator component - smoothly transitions camera to target
+function CameraAnimator({
+  targetPosition,
+  targetOrbit
+}: {
+  targetPosition: [number, number, number]
+  targetOrbit: [number, number, number]
+}) {
+  const { camera } = useThree()
+  const controlsRef = useRef<OrbitControlsImpl>(null)
+
+  useFrame(() => {
+    if (!controlsRef.current) return
+
+    const controls = controlsRef.current
+
+    // Smooth camera position transition
+    camera.position.lerp(
+      new THREE.Vector3(...targetPosition),
+      CAMERA_LERP_FACTOR
+    )
+
+    // Smooth orbit target transition
+    controls.target.lerp(
+      new THREE.Vector3(...targetOrbit),
+      CAMERA_LERP_FACTOR
+    )
+
+    controls.update()
+  })
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enableDamping
+      dampingFactor={0.05}
+      rotateSpeed={0.5}
+      zoomSpeed={0.8}
+      minDistance={5}
+      maxDistance={50}
+    />
+  )
 }
 
 export default function GraphVisualization() {
@@ -18,6 +68,10 @@ export default function GraphVisualization() {
   const [edges, setEdges] = useState<GraphEdge[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Camera animation state
+  const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 15])
+  const [orbitTarget, setOrbitTarget] = useState<[number, number, number]>([0, 0, 0])
 
   // Fetch data from Supabase
   useEffect(() => {
@@ -90,6 +144,42 @@ export default function GraphVisualization() {
   const { nodes: simulatedNodes, toggleSimulation, isRunning } =
     useForceSimulation(nodes, edges.map(e => [e.source, e.target]))
 
+  // Update camera when selected node changes
+  useEffect(() => {
+    if (selectedNode) {
+      const node = simulatedNodes.find(n => n.id === selectedNode)
+      if (node) {
+        // Calculate camera position to maintain viewing angle
+        const nodePos = new THREE.Vector3(...node.position)
+        const currentCamPos = new THREE.Vector3(...cameraTarget)
+        const direction = currentCamPos.clone().sub(new THREE.Vector3(...orbitTarget)).normalize()
+
+        // Position camera at INITIAL_CAMERA_DISTANCE from selected node
+        const newCameraPos = nodePos.clone().add(direction.multiplyScalar(INITIAL_CAMERA_DISTANCE))
+
+        setCameraTarget([newCameraPos.x, newCameraPos.y, newCameraPos.z])
+        setOrbitTarget(node.position)
+      }
+    } else {
+      // Return to origin
+      setCameraTarget([0, 0, 15])
+      setOrbitTarget([0, 0, 0])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNode, simulatedNodes])
+
+  // Handle node selection
+  const handleNodeSelect = (nodeId: string) => {
+    setSelectedNode(nodeId)
+  }
+
+  // Handle background click to deselect
+  const handleBackgroundClick = () => {
+    if (selectedNode) {
+      setSelectedNode(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="w-full h-[600px] flex items-center justify-center border border-terminal-green bg-black">
@@ -137,14 +227,15 @@ export default function GraphVisualization() {
       </div>
 
       {/* 3D Canvas */}
-      <Canvas style={{ background: '#000000' }}>
+      <Canvas
+        style={{ background: '#000000' }}
+        onClick={handleBackgroundClick}
+      >
         <Suspense fallback={null}>
           <PerspectiveCamera makeDefault position={[0, 0, 15]} />
-          <OrbitControls
-            enableDamping
-            dampingFactor={0.05}
-            rotateSpeed={0.5}
-            zoomSpeed={0.8}
+          <CameraAnimator
+            targetPosition={cameraTarget}
+            targetOrbit={orbitTarget}
           />
 
           {/* Lighting */}
@@ -177,7 +268,7 @@ export default function GraphVisualization() {
               position={node.position}
               temperature={node.temperature}
               edgeCount={node.edges.length}
-              onClick={setSelectedNode}
+              onClick={handleNodeSelect}
               isSelected={selectedNode === node.id}
             />
           ))}
