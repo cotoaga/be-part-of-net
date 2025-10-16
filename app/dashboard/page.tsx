@@ -3,7 +3,20 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import MatrixRain from '@/components/MatrixRain'
+
+// Import GraphVisualization dynamically with SSR disabled (Three.js requires browser)
+const GraphVisualization = dynamic(() => import('@/components/GraphVisualization'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[600px] flex items-center justify-center border border-terminal-green bg-black">
+      <div className="text-terminal-green font-mono">
+        LOADING 3D RENDERER...
+      </div>
+    </div>
+  ),
+})
 
 export default function Dashboard() {
   const router = useRouter()
@@ -147,6 +160,14 @@ export default function Dashboard() {
               {testModeMessage}
             </div>
           )}
+        </div>
+
+        {/* 3D GRAPH VISUALIZATION */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-mono mb-4 text-center text-terminal-green">
+            CONSCIOUSNESS NETWORK TOPOLOGY
+          </h2>
+          <GraphVisualization />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
