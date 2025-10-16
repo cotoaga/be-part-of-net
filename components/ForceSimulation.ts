@@ -90,14 +90,17 @@ export function useForceSimulation(
           fz -= node.position[2] * cfg.centeringForce
 
           // Update velocity with damping
-          node.velocity[0] = (node.velocity[0] + fx) * cfg.damping
-          node.velocity[1] = (node.velocity[1] + fy) * cfg.damping
-          node.velocity[2] = (node.velocity[2] + fz) * cfg.damping
+          const newVelX = (node.velocity[0] + fx) * cfg.damping
+          const newVelY = (node.velocity[1] + fy) * cfg.damping
+          const newVelZ = (node.velocity[2] + fz) * cfg.damping
 
-          // Update position
-          node.position[0] += node.velocity[0]
-          node.position[1] += node.velocity[1]
-          node.position[2] += node.velocity[2]
+          // Create NEW arrays for position and velocity (so React detects changes)
+          node.velocity = [newVelX, newVelY, newVelZ]
+          node.position = [
+            node.position[0] + newVelX,
+            node.position[1] + newVelY,
+            node.position[2] + newVelZ
+          ]
         })
 
         return newNodes
