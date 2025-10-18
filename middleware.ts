@@ -54,26 +54,26 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
-    // User not authenticated → redirect to login (friendly entrance)
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  // ===== HANDLE AUTH PAGES (/login, /root) =====
-  // If authenticated user tries to access auth pages, redirect to network
-  // If not authenticated, allow access to auth pages
+  // ===== HANDLE AUTH PAGES (/login, /root) FIRST =====
+  // Check auth pages BEFORE redirecting unauthenticated users (to avoid loops)
   if (pathname === '/login' || pathname === '/root') {
     if (user) {
-      // Authenticated user → redirect to network
+      // Authenticated user trying to access auth page → redirect to network
       const url = request.nextUrl.clone()
       url.pathname = '/network'
       return NextResponse.redirect(url)
     } else {
-      // Not authenticated → allow access to login/root pages
+      // Not authenticated → allow access to auth pages
       return supabaseResponse
     }
+  }
+
+  // ===== REQUIRE AUTHENTICATION FOR PROTECTED ROUTES =====
+  // If not authenticated and not at auth page, redirect to login
+  if (!user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
   }
 
   // ===== ADMIN CHECK for /node-zero =====
