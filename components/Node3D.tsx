@@ -13,6 +13,8 @@ interface Node3DProps {
   edgeCount: number
   onClick?: (id: string) => void
   isSelected?: boolean
+  accentColor?: string
+  backgroundColor?: string
 }
 
 function lerpColor(color1: string, color2: string, t: number): string {
@@ -47,6 +49,8 @@ export default function Node3D({
   edgeCount,
   onClick,
   isSelected = false,
+  accentColor = '#10b981',
+  backgroundColor = '#000000',
 }: Node3DProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
@@ -91,7 +95,7 @@ export default function Node3D({
       {isSelected && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <ringGeometry args={[size * 1.3, size * 1.4, 32]} />
-          <meshBasicMaterial color="#10b981" side={THREE.DoubleSide} />
+          <meshBasicMaterial color={accentColor} side={THREE.DoubleSide} />
         </mesh>
       )}
 
@@ -103,19 +107,19 @@ export default function Node3D({
           distanceFactor={10}
           zIndexRange={[100, 0]}
           style={{
-            color: '#10b981',
+            color: accentColor,
             fontSize: '14px',
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-inter), sans-serif',
             fontWeight: 'bold',
-            background: 'rgba(0, 0, 0, 0.85)',
+            background: `${backgroundColor}e6`, // 90% opacity
             padding: '6px 12px',
             borderRadius: '6px',
-            border: '1px solid #10b981',
-            boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)',
+            border: `1px solid ${accentColor}`,
+            boxShadow: `0 0 10px ${accentColor}50`,
             pointerEvents: 'none',
             userSelect: 'none',
             whiteSpace: 'nowrap',
-            textShadow: '0 0 8px rgba(16, 185, 129, 0.8)',
+            textShadow: `0 0 8px ${accentColor}cc`,
             backdropFilter: 'blur(4px)',
             WebkitBackdropFilter: 'blur(4px)',
           }}

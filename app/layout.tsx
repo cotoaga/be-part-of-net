@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { inter, spaceGrotesk, jetbrainsMono } from '@/lib/fonts'
 
 export const metadata: Metadata = {
   title: 'Node Zero Control Center',
@@ -16,8 +17,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="font-mono">{children}</body>
+    <html
+      lang="en"
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className="font-terminal-mono">{children}</body>
     </html>
   )
 }

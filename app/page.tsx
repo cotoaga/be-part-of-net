@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import CivilizedLayout from '@/components/CivilizedLayout'
+import ThemeToggle from '@/components/ThemeToggle'
 
 // Import GraphVisualization dynamically
 const GraphVisualization = dynamic(() => import('@/components/GraphVisualization'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-full text-gray-400">
-      <p className="text-lg">Loading visualization...</p>
+    <div className="flex items-center justify-center h-full text-soft-gray">
+      <p className="text-lg font-sans">Loading visualization...</p>
     </div>
   ),
 })
@@ -52,13 +54,18 @@ export default function PublicLanding() {
   }
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900">
+    <CivilizedLayout>
+      {/* Theme Toggle - Fixed Position */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       {/* Hero Section */}
       <header className="p-8 text-center">
-        <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-5xl md:text-6xl font-display font-bold text-gray-900 dark:text-white mb-2">
           be-part-of.net
         </h1>
-        <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400">
+        <p className="text-xl md:text-2xl font-sans text-soft-gray dark:text-gray-400">
           The anti-social social network
         </p>
       </header>
@@ -79,14 +86,14 @@ export default function PublicLanding() {
       <div className="flex flex-col sm:flex-row gap-4 justify-center p-8">
         <button
           onClick={toggleExplore}
-          className="px-6 py-3 text-2xl border-2 border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition shadow-sm"
+          className="px-6 py-3 text-2xl font-sans border-2 border-soft-gray dark:border-gray-600 rounded-lg hover:border-klein-bottle-green dark:hover:border-deep-space-blue transition shadow-sm"
         >
           🍸 {exploreMode ? 'Back to Reality' : 'Explore Mode'}
         </button>
 
         <Link
           href="/login"
-          className="px-8 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition font-semibold shadow-lg text-center"
+          className="px-8 py-3 bg-klein-bottle-green dark:bg-deep-space-blue text-white rounded-lg hover:opacity-90 transition font-sans font-semibold shadow-lg text-center"
         >
           Sign In
         </Link>
@@ -94,48 +101,48 @@ export default function PublicLanding() {
 
       {/* Philosophy Section */}
       <section className="max-w-4xl mx-auto p-8 mt-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 dark:text-white mb-8">
+        <h2 className="text-3xl md:text-4xl font-display font-bold text-center text-gray-900 dark:text-white mb-8">
           What is this?
         </h2>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           {/* What We Have */}
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6">
-            <h3 className="text-xl font-semibold text-green-800 dark:text-green-300 mb-4 flex items-center gap-2">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+            <h3 className="text-xl font-sans font-semibold text-green-800 dark:text-green-300 mb-4 flex items-center gap-2">
               <span className="text-2xl">✅</span>
               What we have
             </h3>
-            <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+            <ul className="space-y-3 font-sans text-gray-700 dark:text-gray-300">
               <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
+                <span className="text-klein-bottle-green mt-1">•</span>
                 <span>Just topology (nodes and edges)</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
+                <span className="text-klein-bottle-green mt-1">•</span>
                 <span>Humans + AI agents + apps as equal citizens</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
+                <span className="text-klein-bottle-green mt-1">•</span>
                 <span>Private relationship tags (only you see them)</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
+                <span className="text-klein-bottle-green mt-1">•</span>
                 <span>Temperature visualization (activity, not surveillance)</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
+                <span className="text-klein-bottle-green mt-1">•</span>
                 <span>Invitation-only growth</span>
               </li>
             </ul>
           </div>
 
           {/* What We Don't Have */}
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
-            <h3 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-4 flex items-center gap-2">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <h3 className="text-xl font-sans font-semibold text-red-800 dark:text-red-300 mb-4 flex items-center gap-2">
               <span className="text-2xl">❌</span>
               What we don&apos;t have
             </h3>
-            <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+            <ul className="space-y-3 font-sans text-gray-700 dark:text-gray-300">
               <li className="flex items-start gap-2">
                 <span className="text-red-600 mt-1">•</span>
                 <span>No posts, stories, or feeds</span>
@@ -162,19 +169,19 @@ export default function PublicLanding() {
 
         {/* Closing Statement */}
         <div className="text-center">
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 font-medium">
+          <p className="text-xl md:text-2xl font-sans text-soft-gray dark:text-gray-400 font-medium">
             The network that doesn&apos;t want your attention.
           </p>
-          <p className="text-gray-500 dark:text-gray-500 mt-4">
+          <p className="font-sans text-soft-gray dark:text-gray-500 mt-4">
             Just nodes, edges, and the space between.
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="text-center p-8 text-gray-500 dark:text-gray-600 text-sm">
+      <footer className="text-center p-8 text-soft-gray dark:text-gray-600 text-sm font-sans">
         <p>© 2025 be-part-of.net • The anti-social social network</p>
       </footer>
-    </main>
+    </CivilizedLayout>
   )
 }

@@ -3,10 +3,38 @@
 @tailwind utilities;
 
 @layer base {
+  /* COTOAGA.AI Design System - CSS Variables */
+  :root {
+    /* Primary Colors */
+    --color-klein-bottle-green: #00A86B;
+    --color-deep-space-blue: #0088FF;
+
+    /* Light Mode Colors */
+    --color-warm-canvas: #FAFAFA;
+    --color-soft-gray: #6B7280;
+    --color-graph-bg-light: #FAFAFA;
+    --color-graph-node-light: #00A86B;
+
+    /* Dark Mode Colors */
+    --color-midnight-void: #0A0A0A;
+    --color-graph-bg-dark: #0A0A0A;
+    --color-graph-node-dark: #0088FF;
+
+    /* Terminal Colors (preserved for /root and /node-zero) */
+    --color-terminal-green: #00ff00;
+    --color-terminal-green-dim: #10b981;
+    --color-terminal-bg: #000000;
+
+    /* Font Family Variables */
+    --font-inter: var(--font-inter);
+    --font-space-grotesk: var(--font-space-grotesk);
+    --font-jetbrains-mono: var(--font-jetbrains-mono);
+  }
+
   html {
     font-family: ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Menlo, monospace;
   }
-  
+
   body {
     @apply bg-terminal-bg text-terminal-green-dim;
   }

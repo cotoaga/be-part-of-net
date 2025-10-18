@@ -9,6 +9,7 @@ import Edge3D from './Edge3D'
 import { useForceSimulation, SimulationNode } from './ForceSimulation'
 import * as THREE from 'three'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import { useTheme } from '@/lib/contexts/ThemeContext'
 
 interface GraphEdge {
   source: string
@@ -71,6 +72,15 @@ function CameraAnimator({
 }
 
 export default function GraphVisualization({ data }: GraphVisualizationProps = {}) {
+  // Try to get theme, but fallback to dark if ThemeProvider is not available (e.g., terminal routes)
+  let theme = 'dark'
+  try {
+    const themeContext = useTheme()
+    theme = themeContext.theme
+  } catch {
+    // ThemeProvider not available, use dark theme (terminal aesthetic)
+  }
+
   const [nodes, setNodes] = useState<SimulationNode[]>([])
   const [edges, setEdges] = useState<GraphEdge[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
@@ -79,6 +89,11 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
   // Camera animation state
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 15])
   const [orbitTarget, setOrbitTarget] = useState<[number, number, number]>([0, 0, 0])
+
+  // Theme-aware colors
+  const backgroundColor = theme === 'light' ? '#FAFAFA' : '#0A0A0A'
+  const accentColor = theme === 'light' ? '#00A86B' : '#0088FF' // Klein Bottle Green / Deep Space Blue
+  const borderColor = theme === 'light' ? '#E5E7EB' : '#374151' // gray-200 / gray-700
 
   // Fetch data from Supabase OR use provided data
   useEffect(() => {
@@ -200,9 +215,12 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
 
   if (loading) {
     return (
-      <div className="w-full h-[600px] flex items-center justify-center border border-terminal-green bg-black">
-        <div className="text-terminal-green font-mono">
-          INITIALIZING CONSCIOUSNESS NETWORK...
+      <div
+        className="w-full h-[600px] flex items-center justify-center border rounded-lg"
+        style={{ borderColor, backgroundColor }}
+      >
+        <div className="font-sans" style={{ color: accentColor }}>
+          Loading network...
         </div>
       </div>
     )
@@ -210,11 +228,14 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
 
   if (nodes.length === 0) {
     return (
-      <div className="w-full h-[600px] flex items-center justify-center border border-terminal-green bg-black">
-        <div className="text-terminal-green font-mono text-center">
-          <p>NETWORK EMPTY</p>
+      <div
+        className="w-full h-[600px] flex items-center justify-center border rounded-lg"
+        style={{ borderColor, backgroundColor }}
+      >
+        <div className="font-sans text-center" style={{ color: accentColor }}>
+          <p>Network Empty</p>
           <p className="text-sm mt-2 opacity-70">
-            Click &quot;MIX DRINK&quot; above to populate test network
+            No nodes to display
           </p>
         </div>
       </div>
@@ -222,23 +243,45 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
   }
 
   return (
-    <div className="w-full h-[600px] border border-terminal-green relative bg-black">
+    <div
+      className="w-full h-[600px] border relative rounded-lg"
+      style={{ borderColor, backgroundColor }}
+    >
       {/* Controls */}
       <div className="absolute top-4 right-4 z-10 flex gap-2">
         <button
           onClick={toggleSimulation}
-          className="border border-terminal-green bg-black px-3 py-1 text-sm font-mono text-terminal-green hover:bg-terminal-green hover:text-black transition-colors"
+          className="border px-3 py-1 text-sm font-sans rounded transition-colors"
+          style={{
+            borderColor: accentColor,
+            color: accentColor,
+            backgroundColor: 'transparent',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = accentColor
+            e.currentTarget.style.color = backgroundColor
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = accentColor
+          }}
         >
           {isRunning ? 'PAUSE' : 'RESUME'}
         </button>
       </div>
 
       {/* Graph stats */}
-      <div className="absolute top-4 left-4 z-10 text-terminal-green font-mono text-sm">
+      <div
+        className="absolute top-4 left-4 z-10 font-sans text-sm"
+        style={{ color: accentColor }}
+      >
         <div>NODES: {nodes.length}</div>
         <div>EDGES: {edges.length}</div>
         {selectedNode && (
-          <div className="mt-2 p-2 border border-terminal-green bg-black">
+          <div
+            className="mt-2 p-2 border rounded"
+            style={{ borderColor: accentColor, backgroundColor }}
+          >
             {simulatedNodes.find(n => n.id === selectedNode)?.name}
           </div>
         )}
@@ -246,7 +289,7 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
 
       {/* 3D Canvas */}
       <Canvas
-        style={{ background: '#000000' }}
+        style={{ background: backgroundColor }}
         onPointerMissed={handleBackgroundClick}
       >
         <Suspense fallback={null}>
@@ -273,6 +316,7 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
                 key={`edge-${i}`}
                 start={sourceNode.position}
                 end={targetNode.position}
+                color={accentColor}
               />
             )
           })}
@@ -288,6 +332,8 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
               edgeCount={node.edges.length}
               onClick={handleNodeSelect}
               isSelected={selectedNode === node.id}
+              accentColor={accentColor}
+              backgroundColor={backgroundColor}
             />
           ))}
         </Suspense>
