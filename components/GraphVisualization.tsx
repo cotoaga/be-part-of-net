@@ -15,6 +15,13 @@ interface GraphEdge {
   target: string
 }
 
+interface GraphVisualizationProps {
+  data?: {
+    nodes: SimulationNode[]
+    edges: GraphEdge[]
+  } | null
+}
+
 // Camera configuration constants
 const INITIAL_CAMERA_DISTANCE = 15
 const CAMERA_LERP_FACTOR = 0.05 // Smooth factor: lower = smoother but slower
@@ -63,7 +70,7 @@ function CameraAnimator({
   )
 }
 
-export default function GraphVisualization() {
+export default function GraphVisualization({ data }: GraphVisualizationProps = {}) {
   const [nodes, setNodes] = useState<SimulationNode[]>([])
   const [edges, setEdges] = useState<GraphEdge[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
@@ -73,8 +80,17 @@ export default function GraphVisualization() {
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 15])
   const [orbitTarget, setOrbitTarget] = useState<[number, number, number]>([0, 0, 0])
 
-  // Fetch data from Supabase
+  // Fetch data from Supabase OR use provided data
   useEffect(() => {
+    // If data prop is provided (test mode), use it directly
+    if (data) {
+      setNodes(data.nodes)
+      setEdges(data.edges)
+      setLoading(false)
+      return
+    }
+
+    // Otherwise, fetch from Supabase
     const fetchGraphData = async () => {
       const supabase = createClient()
 
@@ -138,7 +154,7 @@ export default function GraphVisualization() {
     }
 
     fetchGraphData()
-  }, [])
+  }, [data])
 
   // Run physics simulation
   const { nodes: simulatedNodes, toggleSimulation, isRunning } =

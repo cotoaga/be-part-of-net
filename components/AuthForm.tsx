@@ -107,7 +107,7 @@ export default function AuthForm() {
         })
         if (error) throw error
       }
-      router.push('/dashboard')
+      router.push('/network')
     } catch (error: any) {
       setError(error.message)
     } finally {
