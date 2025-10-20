@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import CivilizedLayout from '@/components/CivilizedLayout'
@@ -11,47 +10,12 @@ const GraphVisualization = dynamic(() => import('@/components/GraphVisualization
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-full text-soft-gray">
-      <p className="text-lg font-sans">Loading visualization...</p>
+      <p className="text-lg font-sans">Loading Zaphod&apos;s Zoo...</p>
     </div>
   ),
 })
 
-// Client-side test data (no database writes)
-const generateTestNetwork = () => {
-  return {
-    nodes: [
-      { id: '1', node_name: 'Zaphod Beeblebrox', node_type: 'human', temperature: 10.0, position: [0, 0, 0], velocity: [0, 0, 0], edges: ['2', '3', '4', '6'] },
-      { id: '2', node_name: 'Ford Prefect', node_type: 'human', temperature: 8.5, position: [5, 0, 0], velocity: [0, 0, 0], edges: ['1', '3', '5'] },
-      { id: '3', node_name: 'Marvin', node_type: 'ai', temperature: 1.0, position: [0, 5, 0], velocity: [0, 0, 0], edges: ['1', '2', '5'] },
-      { id: '4', node_name: 'Eddie', node_type: 'ai', temperature: 9.5, position: [-5, 0, 0], velocity: [0, 0, 0], edges: ['1', '6'] },
-      { id: '5', node_name: 'Deep Thought', node_type: 'ai', temperature: 0.5, position: [0, -5, 0], velocity: [0, 0, 0], edges: ['2', '3'] },
-      { id: '6', node_name: 'Heart of Gold', node_type: 'ai', temperature: 7.5, position: [3, 3, 0], velocity: [0, 0, 0], edges: ['1', '4'] },
-    ],
-    edges: [
-      { source: '1', target: '2' },
-      { source: '1', target: '3' },
-      { source: '1', target: '4' },
-      { source: '1', target: '6' },
-      { source: '2', target: '3' },
-      { source: '2', target: '5' },
-      { source: '3', target: '5' },
-      { source: '4', target: '6' },
-    ]
-  }
-}
-
 export default function PublicLanding() {
-  const [exploreMode, setExploreMode] = useState(false)
-  const [testData, setTestData] = useState<any>(null)
-
-  const toggleExplore = () => {
-    if (!exploreMode) {
-      setTestData(generateTestNetwork())
-    } else {
-      setTestData(null)
-    }
-    setExploreMode(!exploreMode)
-  }
 
   return (
     <CivilizedLayout>
@@ -70,33 +34,26 @@ export default function PublicLanding() {
         </p>
       </header>
 
-      {/* 3D Graph Visualization */}
-      <div className="h-[500px] md:h-[600px] border border-gray-200 dark:border-gray-700 mx-4 md:mx-8 rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-900">
-        {exploreMode && testData ? (
-          <GraphVisualization data={testData} />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <p className="text-lg mb-2">The network awaits</p>
-            <p className="text-sm">Click 🍸 below to explore</p>
-          </div>
-        )}
+      {/* 3D Graph Visualization - Zaphod's Zoo Demo */}
+      <div className="relative h-[500px] md:h-[600px] border border-gray-200 dark:border-gray-700 mx-4 md:mx-8 rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-900">
+        <GraphVisualization isDemoMode={true} />
+
+        {/* Floating Sign In Button */}
+        <div className="absolute top-4 right-4 z-20">
+          <Link
+            href="/login"
+            className="px-6 py-2 bg-klein-bottle-green dark:bg-deep-space-blue text-white rounded-lg hover:opacity-90 transition font-sans font-semibold shadow-lg"
+          >
+            Sign In
+          </Link>
+        </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center p-8">
-        <button
-          onClick={toggleExplore}
-          className="px-6 py-3 text-2xl font-sans border-2 border-soft-gray dark:border-gray-600 rounded-lg hover:border-klein-bottle-green dark:hover:border-deep-space-blue transition shadow-sm"
-        >
-          🍸 {exploreMode ? 'Back to Reality' : 'Explore Mode'}
-        </button>
-
-        <Link
-          href="/login"
-          className="px-8 py-3 bg-klein-bottle-green dark:bg-deep-space-blue text-white rounded-lg hover:opacity-90 transition font-sans font-semibold shadow-lg text-center"
-        >
-          Sign In
-        </Link>
+      {/* Info Text */}
+      <div className="text-center p-4">
+        <p className="font-sans text-soft-gray dark:text-gray-400 text-sm">
+          Click nodes to explore Zaphod&apos;s Zoo • Fog-of-war reveals connections as you traverse
+        </p>
       </div>
 
       {/* Philosophy Section */}

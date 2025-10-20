@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
+import type { NodeType } from '@/types/graph'
 
 export interface SimulationNode {
   id: string
   name: string
+  type?: NodeType
   temperature: number
   position: [number, number, number]
   velocity: [number, number, number]
   edges: string[]
+  confirmed?: boolean
 }
 
 interface SimulationConfig {

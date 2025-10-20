@@ -10,17 +10,20 @@ import { useForceSimulation, SimulationNode } from './ForceSimulation'
 import * as THREE from 'three'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { useTheme } from '@/lib/contexts/ThemeContext'
-
-interface GraphEdge {
-  source: string
-  target: string
-}
+import {
+  calculateHopDistancesBFS,
+  getNodeVisibility,
+  getEdgeVisibility,
+  HopDistanceMap
+} from '@/lib/fogOfWar'
+import type { Node as GraphNode, Edge as GraphEdge, NodeType } from '@/types/graph'
 
 interface GraphVisualizationProps {
   data?: {
     nodes: SimulationNode[]
-    edges: GraphEdge[]
+    edges: { source: string; target: string }[]
   } | null
+  isDemoMode?: boolean // If true, show Zaphod's Zoo
 }
 
 // Camera configuration constants
@@ -71,7 +74,7 @@ function CameraAnimator({
   )
 }
 
-export default function GraphVisualization({ data }: GraphVisualizationProps = {}) {
+export default function GraphVisualization({ data, isDemoMode = false }: GraphVisualizationProps = {}) {
   // Try to get theme, but fallback to dark if ThemeProvider is not available (e.g., terminal routes)
   let theme = 'dark'
   try {
@@ -82,8 +85,10 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
   }
 
   const [nodes, setNodes] = useState<SimulationNode[]>([])
-  const [edges, setEdges] = useState<GraphEdge[]>([])
-  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [edges, setEdges] = useState<{ source: string; target: string }[]>([])
+  const [centeredNodeId, setCenteredNodeId] = useState<string | null>(null)
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
+  const [hopDistances, setHopDistances] = useState<HopDistanceMap>({})
   const [loading, setLoading] = useState(true)
 
   // Camera animation state
@@ -102,6 +107,10 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
       setNodes(data.nodes)
       setEdges(data.edges)
       setLoading(false)
+      // Set initial centered node (first node in demo)
+      if (data.nodes.length > 0 && !centeredNodeId) {
+        setCenteredNodeId(data.nodes[0].id)
+      }
       return
     }
 
@@ -109,10 +118,18 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
     const fetchGraphData = async () => {
       const supabase = createClient()
 
-      // Fetch nodes
-      const { data: nodesData, error: nodesError } = await supabase
-        .from('consciousness_nodes')
-        .select('id, node_name, temperature')
+      // Fetch nodes (filter by is_demo if in demo mode)
+      const nodesQuery = supabase
+        .from('nodes')
+        .select('id, type, name, description, email, url, confirmed, is_demo')
+
+      if (isDemoMode) {
+        nodesQuery.eq('is_demo', true)
+      } else {
+        nodesQuery.eq('is_demo', false)
+      }
+
+      const { data: nodesData, error: nodesError } = await nodesQuery
 
       if (nodesError) {
         console.error('Error fetching nodes:', nodesError)
@@ -120,10 +137,18 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
         return
       }
 
-      // Fetch edges
-      const { data: edgesData, error: edgesError } = await supabase
-        .from('consciousness_edges')
-        .select('source_node_id, target_node_id')
+      // Fetch edges (filter by is_demo if in demo mode)
+      const edgesQuery = supabase
+        .from('edges')
+        .select('from_node_id, to_node_id')
+
+      if (isDemoMode) {
+        edgesQuery.eq('is_demo', true)
+      } else {
+        edgesQuery.eq('is_demo', false)
+      }
+
+      const { data: edgesData, error: edgesError } = await edgesQuery
 
       if (edgesError) {
         console.error('Error fetching edges:', edgesError)
@@ -131,24 +156,25 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
         return
       }
 
-      // Build edge lookup (bidirectional for undirected graph)
+      // Build edge lookup (bidirectional for undirected graph visualization)
       const edgesByNode = new Map<string, string[]>()
       edgesData?.forEach((edge) => {
-        if (!edgesByNode.has(edge.source_node_id)) {
-          edgesByNode.set(edge.source_node_id, [])
+        if (!edgesByNode.has(edge.from_node_id)) {
+          edgesByNode.set(edge.from_node_id, [])
         }
-        if (!edgesByNode.has(edge.target_node_id)) {
-          edgesByNode.set(edge.target_node_id, [])
+        if (!edgesByNode.has(edge.to_node_id)) {
+          edgesByNode.set(edge.to_node_id, [])
         }
-        edgesByNode.get(edge.source_node_id)!.push(edge.target_node_id)
-        edgesByNode.get(edge.target_node_id)!.push(edge.source_node_id)
+        edgesByNode.get(edge.from_node_id)!.push(edge.to_node_id)
+        edgesByNode.get(edge.to_node_id)!.push(edge.from_node_id)
       })
 
       // Transform to graph nodes with random initial positions
       const graphNodes: SimulationNode[] = nodesData?.map((node) => ({
         id: node.id,
-        name: node.node_name,
-        temperature: node.temperature || 5.0,
+        name: node.name,
+        type: node.type as NodeType,
+        temperature: 5.0, // Default temperature for visualization
         position: [
           (Math.random() - 0.5) * 10,
           (Math.random() - 0.5) * 10,
@@ -156,36 +182,59 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
         ],
         velocity: [0, 0, 0],
         edges: edgesByNode.get(node.id) || [],
+        confirmed: node.confirmed ?? true,
       })) || []
 
-      const graphEdges: GraphEdge[] = edgesData?.map((edge) => ({
-        source: edge.source_node_id,
-        target: edge.target_node_id,
+      const graphEdges = edgesData?.map((edge) => ({
+        source: edge.from_node_id,
+        target: edge.to_node_id,
       })) || []
 
       setNodes(graphNodes)
       setEdges(graphEdges)
       setLoading(false)
+
+      // Set initial centered node in demo mode (Zaphod Beeblebrox)
+      if (isDemoMode && graphNodes.length > 0 && !centeredNodeId) {
+        // Find Zaphod node (hardcoded ID from seed data)
+        const zaphodId = 'a1111111-1111-1111-1111-111111111111'
+        const zaphodNode = graphNodes.find(n => n.id === zaphodId)
+        setCenteredNodeId(zaphodNode ? zaphodId : graphNodes[0].id)
+      }
     }
 
     fetchGraphData()
-  }, [data])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, isDemoMode])
 
   // Run physics simulation
   const { nodes: simulatedNodes, toggleSimulation, isRunning } =
     useForceSimulation(nodes, edges.map(e => [e.source, e.target]))
 
-  // Update camera when selected node changes
+  // Calculate hop distances when centered node changes
   useEffect(() => {
-    if (selectedNode) {
-      const node = simulatedNodes.find(n => n.id === selectedNode)
+    if (centeredNodeId && edges.length > 0) {
+      const allNodeIds = simulatedNodes.map(n => n.id)
+      const distances = calculateHopDistancesBFS(
+        centeredNodeId,
+        edges.map(e => ({ from_node_id: e.source, to_node_id: e.target })),
+        allNodeIds
+      )
+      setHopDistances(distances)
+    }
+  }, [centeredNodeId, edges, simulatedNodes])
+
+  // Update camera when centered node changes
+  useEffect(() => {
+    if (centeredNodeId) {
+      const node = simulatedNodes.find(n => n.id === centeredNodeId)
       if (node) {
         // Calculate camera position to maintain viewing angle
         const nodePos = new THREE.Vector3(...node.position)
         const currentCamPos = new THREE.Vector3(...cameraTarget)
         const direction = currentCamPos.clone().sub(new THREE.Vector3(...orbitTarget)).normalize()
 
-        // Position camera at INITIAL_CAMERA_DISTANCE from selected node
+        // Position camera at INITIAL_CAMERA_DISTANCE from centered node
         const newCameraPos = nodePos.clone().add(direction.multiplyScalar(INITIAL_CAMERA_DISTANCE))
 
         setCameraTarget([newCameraPos.x, newCameraPos.y, newCameraPos.z])
@@ -197,20 +246,26 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
       setOrbitTarget([0, 0, 0])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNode, simulatedNodes])
+  }, [centeredNodeId, simulatedNodes])
 
-  // Handle node selection
-  const handleNodeSelect = (nodeId: string) => {
-    console.log('Node selected:', nodeId)
-    setSelectedNode(nodeId)
+  // Handle node click with enforced traversal
+  const handleNodeClick = (nodeId: string) => {
+    const visibility = getNodeVisibility(nodeId, centeredNodeId, hopDistances)
+
+    // Enforced traversal: can't click hop 4+ nodes
+    if (!visibility.isClickable) {
+      console.log('Node not clickable (hop distance too far)')
+      return
+    }
+
+    console.log('Node clicked, setting as centered:', nodeId)
+    setCenteredNodeId(nodeId)
   }
 
-  // Handle background click to deselect
+  // Handle background click - don't deselect in fog-of-war mode
   const handleBackgroundClick = () => {
-    console.log('Background clicked, selectedNode:', selectedNode)
-    if (selectedNode) {
-      setSelectedNode(null)
-    }
+    // In fog-of-war mode, keep centered node active
+    console.log('Background clicked')
   }
 
   if (loading) {
@@ -277,12 +332,13 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
       >
         <div>NODES: {nodes.length}</div>
         <div>EDGES: {edges.length}</div>
-        {selectedNode && (
+        {centeredNodeId && (
           <div
             className="mt-2 p-2 border rounded"
             style={{ borderColor: accentColor, backgroundColor }}
           >
-            {simulatedNodes.find(n => n.id === selectedNode)?.name}
+            <div className="font-bold">CENTERED:</div>
+            <div>{simulatedNodes.find(n => n.id === centeredNodeId)?.name}</div>
           </div>
         )}
       </div>
@@ -304,12 +360,22 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
           <pointLight position={[10, 10, 10]} intensity={0.8} />
           <pointLight position={[-10, -10, -10]} intensity={0.4} />
 
-          {/* Render edges */}
+          {/* Render edges with fog-of-war */}
           {edges.map((edge, i) => {
             const sourceNode = simulatedNodes.find((n) => n.id === edge.source)
             const targetNode = simulatedNodes.find((n) => n.id === edge.target)
 
             if (!sourceNode || !targetNode) return null
+
+            // Calculate edge visibility
+            const edgeVis = getEdgeVisibility(
+              edge.source,
+              edge.target,
+              centeredNodeId,
+              hopDistances
+            )
+
+            if (!edgeVis.isVisible) return null
 
             return (
               <Edge3D
@@ -317,25 +383,38 @@ export default function GraphVisualization({ data }: GraphVisualizationProps = {
                 start={sourceNode.position}
                 end={targetNode.position}
                 color={accentColor}
+                opacity={edgeVis.opacity}
               />
             )
           })}
 
-          {/* Render nodes */}
-          {simulatedNodes.map((node) => (
-            <Node3D
-              key={node.id}
-              id={node.id}
-              name={node.name}
-              position={node.position}
-              temperature={node.temperature}
-              edgeCount={node.edges.length}
-              onClick={handleNodeSelect}
-              isSelected={selectedNode === node.id}
-              accentColor={accentColor}
-              backgroundColor={backgroundColor}
-            />
-          ))}
+          {/* Render nodes with fog-of-war */}
+          {simulatedNodes.map((node) => {
+            const visibility = getNodeVisibility(node.id, centeredNodeId, hopDistances)
+
+            if (!visibility.isVisible) return null
+
+            return (
+              <Node3D
+                key={node.id}
+                id={node.id}
+                name={node.name}
+                position={node.position}
+                temperature={node.temperature}
+                edgeCount={node.edges.length}
+                onClick={handleNodeClick}
+                isCentered={visibility.isCentered}
+                isSelected={visibility.isCentered}
+                isClickable={visibility.isClickable}
+                showLabel={visibility.showLabel}
+                opacity={visibility.opacity}
+                nodeType={node.type}
+                confirmed={node.confirmed}
+                accentColor={accentColor}
+                backgroundColor={backgroundColor}
+              />
+            )
+          })}
         </Suspense>
       </Canvas>
     </div>
