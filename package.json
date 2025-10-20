@@ -46,5 +46,11 @@
     "tailwindcss": "^3.4.14",
     "ts-jest": "^29.4.0",
     "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "three-mesh-bvh": "^0.8.0",
+    "glob": "^10.0.0",
+    "rimraf": "^5.0.0",
+    "inflight": "npm:@zkochan/inflight@^1.0.0"
   }
 }
