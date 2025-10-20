@@ -49,10 +49,7 @@ CREATE TABLE nodes (
   is_demo BOOLEAN DEFAULT FALSE, -- TRUE for Zaphod's Zoo nodes
 
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Constraints
-  CONSTRAINT unique_demo_node_name UNIQUE (name) WHERE is_demo = TRUE
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Edges table (relations between nodes)
@@ -63,7 +60,7 @@ CREATE TABLE edges (
 
   -- Privacy model: label only visible to creator
   label TEXT NOT NULL, -- User-defined relation tag (e.g., "collaborates-with", "built")
-  created_by UUID NOT NULL, -- User ID who created this edge (NULL for demo data)
+  created_by UUID, -- User ID who created this edge (NULL for demo data)
 
   -- Special flag for demo data
   is_demo BOOLEAN DEFAULT FALSE, -- TRUE for Zaphod's Zoo edges
@@ -89,6 +86,9 @@ CREATE INDEX idx_edges_from_node ON edges(from_node_id);
 CREATE INDEX idx_edges_to_node ON edges(to_node_id);
 CREATE INDEX idx_edges_created_by ON edges(created_by);
 CREATE INDEX idx_edges_is_demo ON edges(is_demo);
+
+-- Partial unique index for demo node names
+CREATE UNIQUE INDEX idx_nodes_demo_name_unique ON nodes(name) WHERE is_demo = TRUE;
 
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
