@@ -24,6 +24,10 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   process.exit(1);
 }
 
+// TypeScript now knows these are defined after the exit check
+const supabaseUrl: string = SUPABASE_URL;
+const supabaseServiceKey: string = SUPABASE_SERVICE_KEY;
+
 const migrationFile = process.argv[2];
 
 if (!migrationFile) {
@@ -55,7 +59,7 @@ async function runMigration() {
   console.log('');
 
   // Create Supabase client with service role
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
