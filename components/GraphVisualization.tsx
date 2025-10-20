@@ -173,6 +173,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       const graphNodes: SimulationNode[] = nodesData?.map((node) => ({
         id: node.id,
         name: node.name,
+        description: node.description,
         type: node.type as NodeType,
         temperature: 5.0, // Default temperature for visualization
         position: [
@@ -302,43 +303,52 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       className="w-full h-[600px] border relative rounded-lg"
       style={{ borderColor, backgroundColor }}
     >
-      {/* Controls */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <button
-          onClick={toggleSimulation}
-          className="border px-3 py-1 text-sm font-sans rounded transition-colors"
-          style={{
-            borderColor: accentColor,
-            color: accentColor,
-            backgroundColor: 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = accentColor
-            e.currentTarget.style.color = backgroundColor
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent'
-            e.currentTarget.style.color = accentColor
-          }}
-        >
-          {isRunning ? 'PAUSE' : 'RESUME'}
-        </button>
-      </div>
-
       {/* Graph stats */}
       <div
-        className="absolute top-4 left-4 z-10 font-sans text-sm"
+        className="absolute top-4 left-4 z-10 font-sans text-sm space-y-2"
         style={{ color: accentColor }}
       >
-        <div>NODES: {nodes.length}</div>
-        <div>EDGES: {edges.length}</div>
-        {centeredNodeId && (
+        {/* Node counts by visibility */}
+        <div className="space-y-1">
+          <div>NODES (TOTAL): {nodes.length}</div>
+          <div>
+            NODES (CLOSE): {
+              simulatedNodes.filter(n => {
+                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances)
+                return vis.opacity >= 0.5 && vis.isVisible
+              }).length
+            }
+          </div>
+          <div>
+            NODES (FAR): {
+              simulatedNodes.filter(n => {
+                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances)
+                return vis.opacity < 0.5 && vis.isVisible
+              }).length
+            }
+          </div>
+        </div>
+
+        {/* Centered node info */}
+        {centeredNodeId ? (
           <div
             className="mt-2 p-2 border rounded"
             style={{ borderColor: accentColor, backgroundColor }}
           >
             <div className="font-bold">CENTERED:</div>
             <div>{simulatedNodes.find(n => n.id === centeredNodeId)?.name}</div>
+            {simulatedNodes.find(n => n.id === centeredNodeId)?.description && (
+              <div className="text-xs mt-1 opacity-70">
+                {simulatedNodes.find(n => n.id === centeredNodeId)?.description}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            className="mt-2 p-2 border rounded"
+            style={{ borderColor: accentColor, backgroundColor }}
+          >
+            <div className="text-xs opacity-70">Center (not centered)</div>
           </div>
         )}
       </div>

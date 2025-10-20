@@ -4,6 +4,7 @@ import type { NodeType } from '@/types/graph'
 export interface SimulationNode {
   id: string
   name: string
+  description?: string
   type?: NodeType
   temperature: number
   position: [number, number, number]

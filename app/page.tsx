@@ -19,11 +19,6 @@ export default function PublicLanding() {
 
   return (
     <CivilizedLayout>
-      {/* Theme Toggle - Fixed Position */}
-      <div className="fixed top-4 right-4 z-50">
-        <ThemeToggle />
-      </div>
-
       {/* Hero Section */}
       <header className="p-8 text-center">
         <h1 className="text-5xl md:text-6xl font-display font-bold text-gray-900 dark:text-white mb-2">
@@ -38,8 +33,9 @@ export default function PublicLanding() {
       <div className="relative h-[500px] md:h-[600px] border border-gray-200 dark:border-gray-700 mx-4 md:mx-8 rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-900">
         <GraphVisualization isDemoMode={true} />
 
-        {/* Floating Sign In Button */}
-        <div className="absolute top-4 right-4 z-20">
+        {/* Top-right controls: Theme Toggle + Sign In */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
+          <ThemeToggle />
           <Link
             href="/login"
             className="px-6 py-2 bg-klein-bottle-green dark:bg-deep-space-blue text-white rounded-lg hover:opacity-90 transition font-sans font-semibold shadow-lg"
@@ -52,7 +48,7 @@ export default function PublicLanding() {
       {/* Info Text */}
       <div className="text-center p-4">
         <p className="font-sans text-soft-gray dark:text-gray-400 text-sm">
-          Click nodes to explore Zaphod&apos;s Zoo • Fog-of-war reveals connections as you traverse
+          Click nodes to explore the graph | there is a &apos;fog of war&apos; that hides nodes far away, do not hold back and traverse the graph
         </p>
       </div>
 
@@ -136,8 +132,39 @@ export default function PublicLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="text-center p-8 text-soft-gray dark:text-gray-600 text-sm font-sans">
-        <p>© 2025 be-part-of.net • The anti-social social network</p>
+      <footer className="text-center p-8 text-soft-gray dark:text-gray-600 text-sm font-sans space-y-2">
+        <p>
+          © 2025 be-part-of.net | Ideas want to be free! Content under{' '}
+          <a
+            href="https://creativecommons.org/licenses/by-sa/4.0/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-klein-bottle-green dark:hover:text-deep-space-blue transition"
+          >
+            CC BY-SA 4.0
+          </a>
+          {' '}| Use it, improve it, share it.
+        </p>
+        <p>
+          A gimmick from{' '}
+          <a
+            href="https://cotoaga.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-klein-bottle-green dark:hover:text-deep-space-blue transition"
+          >
+            cotoaga.ai
+          </a>
+          {' '}which is a theme within{' '}
+          <a
+            href="https://cotoaga.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-klein-bottle-green dark:hover:text-deep-space-blue transition"
+          >
+            cotoaga.net
+          </a>
+        </p>
       </footer>
     </CivilizedLayout>
   )
