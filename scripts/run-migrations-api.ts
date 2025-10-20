@@ -16,10 +16,14 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   process.exit(1);
 }
 
+// TypeScript now knows these are defined after the exit check
+const supabaseUrl: string = SUPABASE_URL;
+const supabaseAnonKey: string = SUPABASE_ANON_KEY;
+
 async function runMigrations() {
   console.log('🚀 Running migrations via Supabase API...\n');
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   // Read migration files
   const migration1 = readFileSync(join(process.cwd(), 'migrations/001_fresh_start_schema.sql'), 'utf-8');
