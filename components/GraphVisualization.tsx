@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Node3D from './Node3D'
 import Edge3D from './Edge3D'
+import HondiusInterface from './HondiusInterface'
 import { useForceSimulation, SimulationNode } from './ForceSimulation'
 import * as THREE from 'three'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -90,6 +91,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const [hopDistances, setHopDistances] = useState<HopDistanceMap>({})
   const [loading, setLoading] = useState(true)
+  const [isHondiusOpen, setIsHondiusOpen] = useState(false)
 
   // Camera animation state
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 15])
@@ -121,7 +123,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       // Fetch nodes (filter by is_demo if in demo mode)
       const nodesQuery = supabase
         .from('nodes')
-        .select('id, type, name, description, email, url, confirmed, is_demo')
+        .select('id, type, name, description, email, url, confirmed, is_demo, is_global_service')
 
       if (isDemoMode) {
         nodesQuery.eq('is_demo', true)
@@ -184,6 +186,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
         velocity: [0, 0, 0],
         edges: edgesByNode.get(node.id) || [],
         confirmed: node.confirmed ?? true,
+        is_global_service: node.is_global_service ?? false,
       })) || []
 
       const graphEdges = edgesData?.map((edge) => ({
@@ -251,7 +254,16 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
 
   // Handle node click with enforced traversal
   const handleNodeClick = (nodeId: string) => {
-    const visibility = getNodeVisibility(nodeId, centeredNodeId, hopDistances)
+    const node = simulatedNodes.find(n => n.id === nodeId)
+
+    // Check if this is a global service MCP (like Hondius)
+    if (node?.type === 'mcp' && node?.is_global_service) {
+      console.log('Global service MCP clicked, opening interface:', node.name)
+      setIsHondiusOpen(true)
+      return
+    }
+
+    const visibility = getNodeVisibility(nodeId, centeredNodeId, hopDistances, node?.is_global_service)
 
     // Enforced traversal: can't click hop 4+ nodes
     if (!visibility.isClickable) {
@@ -314,7 +326,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
           <div>
             NODES (CLOSE): {
               simulatedNodes.filter(n => {
-                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances)
+                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances, n.is_global_service)
                 return vis.opacity >= 0.5 && vis.isVisible
               }).length
             }
@@ -322,7 +334,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
           <div>
             NODES (FAR): {
               simulatedNodes.filter(n => {
-                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances)
+                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances, n.is_global_service)
                 return vis.opacity < 0.5 && vis.isVisible
               }).length
             }
@@ -382,7 +394,9 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
               edge.source,
               edge.target,
               centeredNodeId,
-              hopDistances
+              hopDistances,
+              sourceNode.is_global_service,
+              targetNode.is_global_service
             )
 
             if (!edgeVis.isVisible) return null
@@ -400,7 +414,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
 
           {/* Render nodes with fog-of-war */}
           {simulatedNodes.map((node) => {
-            const visibility = getNodeVisibility(node.id, centeredNodeId, hopDistances)
+            const visibility = getNodeVisibility(node.id, centeredNodeId, hopDistances, node.is_global_service)
 
             if (!visibility.isVisible) return null
 
@@ -427,6 +441,12 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
           })}
         </Suspense>
       </Canvas>
+
+      {/* Hondius Interface - slide-in panel */}
+      <HondiusInterface
+        isOpen={isHondiusOpen}
+        onClose={() => setIsHondiusOpen(false)}
+      />
     </div>
   )
 }
