@@ -7,6 +7,11 @@
  * - Hop 2-3: Reduced opacity, name labels visible
  * - Hop 4: Very opaque, no labels (ghost nodes)
  * - Hop 5-6: Invisible (not rendered)
+ *
+ * Global Service Exemption:
+ * - Nodes with is_global_service=true are ALWAYS visible
+ * - Full opacity, labels shown, clickable regardless of hop distance
+ * - Used for shared MCP services like Hondius that all users can access
  */
 
 export interface HopDistanceMap {
@@ -45,8 +50,21 @@ export const EDGE_OPACITY_MULTIPLIER = 0.7;
 export function getNodeVisibility(
   nodeId: string,
   centeredNodeId: string | null,
-  hopDistances: HopDistanceMap
+  hopDistances: HopDistanceMap,
+  isGlobalService?: boolean
 ): NodeVisibility {
+  // Global service nodes are always fully visible (exempt from fog-of-war)
+  if (isGlobalService) {
+    return {
+      opacity: 1.0,
+      showLabel: true,
+      isClickable: true,
+      isVisible: true,
+      isCentered: false,
+      renderLayer: 'front',
+    };
+  }
+
   // If no centered node, treat all as visible (fallback)
   if (!centeredNodeId) {
     return {
@@ -151,10 +169,12 @@ export function getEdgeVisibility(
   sourceNodeId: string,
   targetNodeId: string,
   centeredNodeId: string | null,
-  hopDistances: HopDistanceMap
+  hopDistances: HopDistanceMap,
+  sourceIsGlobalService?: boolean,
+  targetIsGlobalService?: boolean
 ): { opacity: number; isVisible: boolean } {
-  const sourceVis = getNodeVisibility(sourceNodeId, centeredNodeId, hopDistances);
-  const targetVis = getNodeVisibility(targetNodeId, centeredNodeId, hopDistances);
+  const sourceVis = getNodeVisibility(sourceNodeId, centeredNodeId, hopDistances, sourceIsGlobalService);
+  const targetVis = getNodeVisibility(targetNodeId, centeredNodeId, hopDistances, targetIsGlobalService);
 
   // Edge is visible only if both endpoints are visible
   const isVisible = sourceVis.isVisible && targetVis.isVisible;
