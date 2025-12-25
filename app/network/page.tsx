@@ -33,14 +33,16 @@ export default function NetworkPage() {
       } else {
         setUserEmail(user.email || '')
 
-        // Try to get node name from database
+        // Try to get node name from database (NEW schema)
         const { data: node } = await supabase
-          .from('consciousness_nodes')
-          .select('node_name')
-          .eq('auth_user_id', user.id)
-          .single()
+          .from('nodes')
+          .select('name')
+          .contains('controlled_by', [user.id])
+          .eq('type', 'person')
+          .eq('is_demo', false)
+          .maybeSingle()
 
-        setUserName(node?.node_name || user.email?.split('@')[0] || 'User')
+        setUserName(node?.name || user.email?.split('@')[0] || 'User')
       }
     }
     getUser()

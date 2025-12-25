@@ -12,11 +12,10 @@ export async function middleware(request: NextRequest) {
 
   const isAlwaysPublic = alwaysPublicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
 
-  // Allow always-public routes, static assets, and API endpoints
+  // Allow always-public routes, static assets, and health check API
   if (
     isAlwaysPublic ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/test') || // TODO: protect these later
     pathname.startsWith('/api/consciousness') ||
     pathname.includes('.')
   ) {
@@ -76,23 +75,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // ===== ADMIN CHECK for /node-zero =====
-  if (pathname.startsWith('/node-zero')) {
-    const { data: node, error } = await supabase
-      .from('consciousness_nodes')
+  // ===== ADMIN CHECK for /node-zero and /api/test/* =====
+  const requiresAdmin = pathname.startsWith('/node-zero') || pathname.startsWith('/api/test')
+
+  if (requiresAdmin) {
+    const { data: userData, error } = await supabase
+      .from('users')
       .select('is_admin')
       .eq('auth_user_id', user.id)
       .single()
 
-    if (error || !node?.is_admin) {
-      // Non-admin trying to access god mode → redirect to network
-      console.log(`[middleware] Non-admin user ${user.email} attempted to access /node-zero`)
+    if (error || !userData?.is_admin) {
+      // Non-admin trying to access god mode or test endpoints
+      console.log(`[middleware] Non-admin user ${user.email} attempted to access ${pathname}`)
+
+      // For API routes, return 403 JSON response
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Forbidden', message: 'Admin access required' },
+          { status: 403 }
+        )
+      }
+
+      // For page routes, redirect to network
       const url = request.nextUrl.clone()
       url.pathname = '/network'
       return NextResponse.redirect(url)
     }
 
-    console.log(`[middleware] Admin access granted to ${user.email} for /node-zero`)
+    console.log(`[middleware] Admin access granted to ${user.email} for ${pathname}`)
   }
 
   return supabaseResponse

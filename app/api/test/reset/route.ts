@@ -16,7 +16,7 @@ export async function POST() {
 
     // Delete all edges first (foreign key constraint)
     const { error: edgesError } = await supabase
-      .from('consciousness_edges')
+      .from('edges')
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
 
@@ -26,7 +26,7 @@ export async function POST() {
 
     // Delete all nodes
     const { error: nodesError } = await supabase
-      .from('consciousness_nodes')
+      .from('nodes')
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
 
@@ -36,6 +36,17 @@ export async function POST() {
         { error: 'Failed to reset network', details: nodesError },
         { status: 500 }
       )
+    }
+
+    // Also delete users (will cascade to auth.users via ON DELETE CASCADE)
+    const { error: usersError } = await supabase
+      .from('users')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
+
+    if (usersError) {
+      console.error('Error deleting users:', usersError)
+      // Don't fail the request - users deletion is optional
     }
 
     return NextResponse.json({

@@ -1,136 +1,137 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+// Test nodes for "Zaphod's Zoo" demo (NEW schema format)
 const TEST_NODES = [
   {
-    node_name: "Zaphod Beeblebrox",
-    node_aka: "The Man, The Myth, The Two Heads",
-    node_type: "human",
-    temperature: 10.0,
-    coherence_level: 42.0,
-    node_url: "https://heart-of-gold.galaxy",
-    status: "active"
+    type: "person",
+    name: "Zaphod Beeblebrox",
+    description: "The Man, The Myth, The Two Heads",
+    url: "https://heart-of-gold.galaxy",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[], // Will be set to current user later
   },
   {
-    node_name: "Marvin",
-    node_aka: "The Paranoid Android",
-    node_type: "ai",
-    temperature: 0.5,
-    coherence_level: 99.9,
-    mcp_endpoint: "mcp://sirius-cybernetics.corp/marvin",
-    status: "active"
+    type: "app",
+    name: "Marvin",
+    description: "The Paranoid Android",
+    endpoint_url: "mcp://sirius-cybernetics.corp/marvin",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Ford Prefect",
-    node_aka: "Ix",
-    node_type: "human",
-    temperature: 7.0,
-    coherence_level: 75.0,
-    node_url: "https://betelgeuse-seven.galaxy",
-    status: "active"
+    type: "person",
+    name: "Ford Prefect",
+    description: "Ix",
+    url: "https://betelgeuse-seven.galaxy",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Arthur Dent",
-    node_aka: "The Last Man from Earth",
-    node_type: "human",
-    temperature: 5.0,
-    coherence_level: 30.0,
-    node_url: "https://earth.nostalgic",
-    status: "active"
+    type: "person",
+    name: "Arthur Dent",
+    description: "The Last Man from Earth",
+    url: "https://earth.nostalgic",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Trillian",
-    node_aka: "Tricia McMillan",
-    node_type: "human",
-    temperature: 6.5,
-    coherence_level: 85.0,
-    node_url: "https://astrophysics.academy",
-    status: "active"
+    type: "person",
+    name: "Trillian",
+    description: "Tricia McMillan",
+    url: "https://astrophysics.academy",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Slartibartfast",
-    node_aka: "The Fjord Designer",
-    node_type: "human",
-    temperature: 1.0,
-    coherence_level: 92.0,
-    node_url: "https://magrathea.planet-builders",
-    status: "active"
+    type: "person",
+    name: "Slartibartfast",
+    description: "The Fjord Designer",
+    url: "https://magrathea.planet-builders",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Deep Thought",
-    node_aka: "The Ultimate Computer",
-    node_type: "ai",
-    temperature: 0.0,
-    coherence_level: 100.0,
-    mcp_endpoint: "mcp://hyperspace.network/deep-thought",
-    status: "active"
+    type: "app",
+    name: "Deep Thought",
+    description: "The Ultimate Computer",
+    endpoint_url: "mcp://hyperspace.network/deep-thought",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Eddie",
-    node_aka: "Heart of Gold Ship Computer",
-    node_type: "ai",
-    temperature: 9.0,
-    coherence_level: 88.0,
-    mcp_endpoint: "mcp://heart-of-gold.galaxy/eddie",
-    status: "active"
+    type: "app",
+    name: "Eddie",
+    description: "Heart of Gold Ship Computer",
+    endpoint_url: "mcp://heart-of-gold.galaxy/eddie",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Prostetnic Vogon Jeltz",
-    node_aka: "The Vogon Captain",
-    node_type: "human",
-    temperature: 3.0,
-    coherence_level: 45.0,
-    node_url: "https://vogon-constructor-fleet.gov",
-    status: "active"
+    type: "person",
+    name: "Prostetnic Vogon Jeltz",
+    description: "The Vogon Captain",
+    url: "https://vogon-constructor-fleet.gov",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Fenchurch",
-    node_aka: "The Girl Who Vanished",
-    node_type: "human",
-    temperature: 4.0,
-    coherence_level: 70.0,
-    node_url: "https://london.earth",
-    status: "active"
+    type: "person",
+    name: "Fenchurch",
+    description: "The Girl Who Vanished",
+    url: "https://london.earth",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Random Dent",
-    node_aka: "Daughter of Arthur",
-    node_type: "human",
-    temperature: 8.5,
-    coherence_level: 55.0,
-    node_url: "https://random-adventures.galaxy",
-    status: "active"
+    type: "person",
+    name: "Random Dent",
+    description: "Daughter of Arthur",
+    url: "https://random-adventures.galaxy",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   },
   {
-    node_name: "Agrajag",
-    node_aka: "The Perpetually Reincarnating",
-    node_type: "human",
-    temperature: 2.0,
-    coherence_level: 25.0,
-    node_url: "https://cathedral-of-hate.afterlife",
-    status: "active"
+    type: "person",
+    name: "Agrajag",
+    description: "The Perpetually Reincarnating",
+    url: "https://cathedral-of-hate.afterlife",
+    is_demo: true,
+    confirmed: true,
+    controlled_by: [] as string[],
   }
 ]
 
 const TEST_EDGES = [
-  { source: "Zaphod Beeblebrox", target: "Ford Prefect" },
-  { source: "Zaphod Beeblebrox", target: "Trillian" },
-  { source: "Zaphod Beeblebrox", target: "Marvin" },
-  { source: "Zaphod Beeblebrox", target: "Eddie" },
-  { source: "Ford Prefect", target: "Arthur Dent" },
-  { source: "Ford Prefect", target: "Trillian" },
-  { source: "Arthur Dent", target: "Trillian" },
-  { source: "Arthur Dent", target: "Marvin" },
-  { source: "Arthur Dent", target: "Slartibartfast" },
-  { source: "Arthur Dent", target: "Fenchurch" },
-  { source: "Arthur Dent", target: "Random Dent" },
-  { source: "Deep Thought", target: "Slartibartfast" },
-  { source: "Deep Thought", target: "Marvin" },
-  { source: "Eddie", target: "Marvin" },
-  { source: "Prostetnic Vogon Jeltz", target: "Arthur Dent" },
-  { source: "Agrajag", target: "Arthur Dent" },
-  { source: "Random Dent", target: "Trillian" },
-  { source: "Slartibartfast", target: "Trillian" },
+  { source: "Zaphod Beeblebrox", target: "Ford Prefect", label: "co-conspirator" },
+  { source: "Zaphod Beeblebrox", target: "Trillian", label: "ex-relationship" },
+  { source: "Zaphod Beeblebrox", target: "Marvin", label: "ship-crew" },
+  { source: "Zaphod Beeblebrox", target: "Eddie", label: "ship-crew" },
+  { source: "Ford Prefect", target: "Arthur Dent", label: "best-friend" },
+  { source: "Ford Prefect", target: "Trillian", label: "colleague" },
+  { source: "Arthur Dent", target: "Trillian", label: "friend" },
+  { source: "Arthur Dent", target: "Marvin", label: "travels-with" },
+  { source: "Arthur Dent", target: "Slartibartfast", label: "guide" },
+  { source: "Arthur Dent", target: "Fenchurch", label: "romantic" },
+  { source: "Arthur Dent", target: "Random Dent", label: "father" },
+  { source: "Deep Thought", target: "Slartibartfast", label: "creator" },
+  { source: "Deep Thought", target: "Marvin", label: "predecessor" },
+  { source: "Eddie", target: "Marvin", label: "fellow-ai" },
+  { source: "Prostetnic Vogon Jeltz", target: "Arthur Dent", label: "nemesis" },
+  { source: "Agrajag", target: "Arthur Dent", label: "victim-of" },
+  { source: "Random Dent", target: "Trillian", label: "daughter" },
+  { source: "Slartibartfast", target: "Trillian", label: "works-with" },
 ]
 
 export async function POST(request: Request) {
@@ -146,10 +147,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Step 1: Insert all test nodes
+    // Step 1: Delete existing demo nodes and edges first (clean slate)
+    await supabase.from('edges').delete().eq('is_demo', true)
+    await supabase.from('nodes').delete().eq('is_demo', true)
+
+    // Step 2: Insert all test nodes (NEW schema)
     const { data: insertedNodes, error: nodesError } = await supabase
-      .from('consciousness_nodes')
-      .upsert(TEST_NODES, { onConflict: 'node_name', ignoreDuplicates: false })
+      .from('nodes')
+      .insert(TEST_NODES)
       .select()
 
     if (nodesError) {
@@ -165,14 +170,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Step 2: Link current user to Zaphod
-    const zaphodNode = insertedNodes?.find(n => n.node_name === 'Zaphod Beeblebrox')
+    // Step 3: Link current user to Zaphod (add user.id to controlled_by array)
+    const zaphodNode = insertedNodes?.find(n => n.name === 'Zaphod Beeblebrox')
     if (zaphodNode) {
       const { error: updateError } = await supabase
-        .from('consciousness_nodes')
+        .from('nodes')
         .update({
-          auth_user_id: user.id,
-          node_email: user.email
+          controlled_by: [user.id],
+          email: user.email
         })
         .eq('id', zaphodNode.id)
 
@@ -181,24 +186,23 @@ export async function POST(request: Request) {
       }
     }
 
-    // Step 3: Create node lookup map
+    // Step 4: Create node lookup map
     const nodeMap = new Map(
-      insertedNodes?.map(node => [node.node_name, node.id]) || []
+      insertedNodes?.map(node => [node.name, node.id]) || []
     )
 
-    // Step 4: Insert edges with actual node IDs
+    // Step 5: Insert edges with actual node IDs (NEW schema)
     const edgesToInsert = TEST_EDGES.map(edge => ({
-      source_node_id: nodeMap.get(edge.source),
-      target_node_id: nodeMap.get(edge.target),
-      edge_type: 'connection'
-    })).filter(edge => edge.source_node_id && edge.target_node_id)
+      from_node_id: nodeMap.get(edge.source),
+      to_node_id: nodeMap.get(edge.target),
+      label: edge.label,
+      created_by: null, // Demo data has no creator
+      is_demo: true
+    })).filter(edge => edge.from_node_id && edge.to_node_id)
 
     const { data: insertedEdges, error: edgesError } = await supabase
-      .from('consciousness_edges')
-      .upsert(edgesToInsert, {
-        onConflict: 'source_node_id,target_node_id',
-        ignoreDuplicates: true
-      })
+      .from('edges')
+      .insert(edgesToInsert)
       .select()
 
     if (edgesError) {
@@ -208,7 +212,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "DON'T PANIC - Test network initialized!",
+      message: "DON'T PANIC - Zaphod's Zoo initialized!",
       stats: {
         nodes_created: insertedNodes?.length || 0,
         edges_created: insertedEdges?.length || 0,
