@@ -457,34 +457,84 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       className="w-full h-[600px] border relative rounded-lg"
       style={{ borderColor, backgroundColor }}
     >
-      {/* Center Me Button (Phase 1) */}
-      {userNodeId && !isDemoMode && (
+      {/* Control Buttons */}
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        {/* Pause/Resume Button */}
         <button
-          onClick={handleCenterMe}
-          className="absolute top-4 right-4 z-10 px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
+          onClick={toggleSimulation}
+          className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
           style={{
             borderColor: accentColor,
             color: accentColor
           }}
-          title="Center on your node"
+          title={isRunning ? "Pause physics simulation" : "Resume physics simulation"}
         >
-          <svg
-            className="inline-block w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-            <circle cx="12" cy="12" r="3" strokeWidth={2} />
-          </svg>
-          Center Me
+          {isRunning ? (
+            <>
+              <svg
+                className="inline-block w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 9v6m4-6v6"
+                />
+              </svg>
+              Pause
+            </>
+          ) : (
+            <>
+              <svg
+                className="inline-block w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+              </svg>
+              Resume
+            </>
+          )}
         </button>
-      )}
+
+        {/* Center Me Button */}
+        {userNodeId && !isDemoMode && (
+          <button
+            onClick={handleCenterMe}
+            className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
+            style={{
+              borderColor: accentColor,
+              color: accentColor
+            }}
+            title="Center on your node"
+          >
+            <svg
+              className="inline-block w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+              <circle cx="12" cy="12" r="3" strokeWidth={2} />
+            </svg>
+            Center Me
+          </button>
+        )}
+      </div>
 
       {/* Graph stats */}
       <div
