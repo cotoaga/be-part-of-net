@@ -18,6 +18,7 @@ interface InspectPanelProps {
   } | null
   currentUserId: string | null
   onAddConnection?: () => void
+  onDeleteNode?: (nodeId: string) => void
 }
 
 export default function InspectPanel({
@@ -25,7 +26,8 @@ export default function InspectPanel({
   onClose,
   node,
   currentUserId,
-  onAddConnection
+  onAddConnection,
+  onDeleteNode
 }: InspectPanelProps) {
   // Handle escape key
   useEffect(() => {
@@ -145,15 +147,32 @@ export default function InspectPanel({
             </div>
           )}
 
-          {/* Add Connection Button - only for nodes you control */}
-          {isOwnNode && onAddConnection && (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={onAddConnection}
-                className="w-full px-6 py-3 bg-[var(--color-klein-bottle-green)] dark:bg-[var(--color-deep-space-blue)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
-              >
-                + Add Connection
-              </button>
+          {/* Action Buttons - only for nodes you control */}
+          {isOwnNode && (onAddConnection || onDeleteNode) && (
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+              {onAddConnection && (
+                <button
+                  onClick={onAddConnection}
+                  className="w-full px-6 py-3 bg-[var(--color-klein-bottle-green)] dark:bg-[var(--color-deep-space-blue)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                >
+                  + Add Connection
+                </button>
+              )}
+
+              {/* Delete Button - only for app/mcp nodes you control */}
+              {onDeleteNode && node.type !== 'person' && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Delete "${node.name}"? This will remove the node and all its connections.`)) {
+                      onDeleteNode(node.id)
+                      onClose()
+                    }
+                  }}
+                  className="w-full px-6 py-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                >
+                  Delete Node
+                </button>
+              )}
             </div>
           )}
         </div>

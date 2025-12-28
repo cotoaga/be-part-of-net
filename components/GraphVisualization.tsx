@@ -9,6 +9,7 @@ import Edge3D from './Edge3D'
 import HondiusInterface from './HondiusInterface'
 import InspectPanel from './InspectPanel'
 import AddConnectionModal, { type ConnectionFormData } from './AddConnectionModal'
+import ThemeToggle from './ThemeToggle'
 import { useForceSimulation, SimulationNode } from './ForceSimulation'
 import * as THREE from 'three'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -359,6 +360,39 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
     setIsPanelOpen(false)
   }
 
+  // Handle node deletion
+  const handleDeleteNode = async (nodeId: string) => {
+    try {
+      const response = await fetch(`/api/nodes/${nodeId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(`Failed to delete node: ${error.error}`)
+        return
+      }
+
+      // Remove from local state
+      setNodes(prev => prev.filter(n => n.id !== nodeId))
+      setEdges(prev => prev.filter(e => e.source !== nodeId && e.target !== nodeId))
+      setFullNodesData(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(nodeId)
+        return newMap
+      })
+
+      // Close panel
+      setIsPanelOpen(false)
+      setSelectedNodeId(null)
+
+      console.log('Node deleted successfully')
+    } catch (error) {
+      console.error('Error deleting node:', error)
+      alert('Failed to delete node')
+    }
+  }
+
   // Handle connection creation (Phase 2)
   const handleCreateConnection = async (formData: ConnectionFormData) => {
     if (!userNodeId) {
@@ -479,7 +513,12 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       style={{ borderColor, backgroundColor }}
     >
       {/* Control Buttons */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
+      <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
+        {/* Theme Toggle */}
+        <div className="scale-90">
+          <ThemeToggle />
+        </div>
+
         {/* Demo/Real Toggle Button */}
         <button
           onClick={handleToggleDemoMode}
@@ -754,6 +793,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
         onAddConnection={() => {
           setIsAddConnectionOpen(true)
         }}
+        onDeleteNode={handleDeleteNode}
       />
 
       {/* Add Connection Modal (Phase 2) */}
