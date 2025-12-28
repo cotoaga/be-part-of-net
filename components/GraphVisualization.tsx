@@ -36,19 +36,22 @@ const CAMERA_LERP_FACTOR = 0.05 // Smooth factor: lower = smoother but slower
 // Camera animator component - smoothly transitions camera to target
 function CameraAnimator({
   targetPosition,
-  targetOrbit
+  targetOrbit,
+  enableAutoCenter
 }: {
   targetPosition: [number, number, number]
   targetOrbit: [number, number, number]
+  enableAutoCenter: boolean
 }) {
   const { camera } = useThree()
   const controlsRef = useRef<OrbitControlsImpl>(null)
 
   useFrame(() => {
-    if (!controlsRef.current) return
+    if (!controlsRef.current || !enableAutoCenter) return
 
     const controls = controlsRef.current
 
+    // Only lerp if auto-centering is enabled
     // Smooth camera position transition
     camera.position.lerp(
       new THREE.Vector3(...targetPosition),
@@ -108,6 +111,11 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
   // Camera animation state
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 15])
   const [orbitTarget, setOrbitTarget] = useState<[number, number, number]>([0, 0, 0])
+  const [enableAutoCenter, setEnableAutoCenter] = useState(false)
+
+  // Demo mode toggle (local state overrides prop)
+  const [isDemoModeLocal, setIsDemoModeLocal] = useState(isDemoMode)
+  const activeDemoMode = isDemoModeLocal
 
   // Theme-aware colors
   const backgroundColor = theme === 'light' ? '#FAFAFA' : '#0A0A0A'
@@ -116,7 +124,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
 
   // Fetch user's node ID (Phase 1+2)
   useEffect(() => {
-    if (isDemoMode) return // Skip in demo mode
+    if (activeDemoMode) return // Skip in demo mode
 
     const fetchUserNode = async () => {
       const supabase = createClient()
@@ -143,7 +151,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
 
     fetchUserNode()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemoMode])
+  }, [activeDemoMode])
 
   // Fetch data from Supabase OR use provided data
   useEffect(() => {
@@ -168,7 +176,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
         .from('nodes')
         .select('id, type, name, description, email, url, endpoint_url, confirmed, is_demo, is_global_service, controlled_by')
 
-      if (isDemoMode) {
+      if (activeDemoMode) {
         nodesQuery.eq('is_demo', true)
       } else {
         nodesQuery.eq('is_demo', false)
@@ -187,7 +195,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
         .from('edges')
         .select('from_node_id, to_node_id')
 
-      if (isDemoMode) {
+      if (activeDemoMode) {
         edgesQuery.eq('is_demo', true)
       } else {
         edgesQuery.eq('is_demo', false)
@@ -249,7 +257,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       setLoading(false)
 
       // Set initial centered node in demo mode (Zaphod Beeblebrox)
-      if (isDemoMode && graphNodes.length > 0 && !centeredNodeId) {
+      if (activeDemoMode && graphNodes.length > 0 && !centeredNodeId) {
         // Find Zaphod node (hardcoded ID from seed data)
         const zaphodId = 'a1111111-1111-1111-1111-111111111111'
         const zaphodNode = graphNodes.find(n => n.id === zaphodId)
@@ -259,7 +267,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
 
     fetchGraphData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, isDemoMode])
+  }, [data, activeDemoMode])
 
   // Run physics simulation
   const { nodes: simulatedNodes, toggleSimulation, isRunning } =
@@ -335,7 +343,20 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       setCenteredNodeId(userNodeId)
       setSelectedNodeId(userNodeId)
       setIsPanelOpen(true)
+      // Temporarily enable auto-centering for smooth transition
+      setEnableAutoCenter(true)
+      // Disable after animation completes (3 seconds)
+      setTimeout(() => setEnableAutoCenter(false), 3000)
     }
+  }
+
+  // Handle demo mode toggle
+  const handleToggleDemoMode = () => {
+    setIsDemoModeLocal(!isDemoModeLocal)
+    setLoading(true)
+    setCenteredNodeId(null)
+    setSelectedNodeId(null)
+    setIsPanelOpen(false)
   }
 
   // Handle connection creation (Phase 2)
@@ -459,6 +480,53 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
     >
       {/* Control Buttons */}
       <div className="absolute top-4 right-4 z-10 flex gap-2">
+        {/* Demo/Real Toggle Button */}
+        <button
+          onClick={handleToggleDemoMode}
+          className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
+          style={{
+            borderColor: accentColor,
+            color: accentColor
+          }}
+          title={activeDemoMode ? "Switch to real network" : "Switch to demo network (Zaphod's Zoo)"}
+        >
+          {activeDemoMode ? (
+            <>
+              <svg
+                className="inline-block w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              Real
+            </>
+          ) : (
+            <>
+              <svg
+                className="inline-block w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Demo
+            </>
+          )}
+        </button>
+
         {/* Pause/Resume Button */}
         <button
           onClick={toggleSimulation}
@@ -507,7 +575,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
         </button>
 
         {/* Center Me Button */}
-        {userNodeId && !isDemoMode && (
+        {userNodeId && !activeDemoMode && (
           <button
             onClick={handleCenterMe}
             className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
@@ -596,6 +664,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
           <CameraAnimator
             targetPosition={cameraTarget}
             targetOrbit={orbitTarget}
+            enableAutoCenter={enableAutoCenter}
           />
 
           {/* Lighting */}
