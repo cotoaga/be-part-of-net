@@ -28,6 +28,8 @@ interface GraphVisualizationProps {
     edges: { source: string; target: string }[]
   } | null
   isDemoMode?: boolean // If true, show Zaphod's Zoo
+  onSignOut?: () => void
+  userName?: string
 }
 
 // Camera configuration constants
@@ -81,7 +83,7 @@ function CameraAnimator({
   )
 }
 
-export default function GraphVisualization({ data, isDemoMode = false }: GraphVisualizationProps = {}) {
+export default function GraphVisualization({ data, isDemoMode = false, onSignOut, userName }: GraphVisualizationProps = {}) {
   // Try to get theme, but fallback to dark if ThemeProvider is not available (e.g., terminal routes)
   let theme = 'dark'
   try {
@@ -98,6 +100,8 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
   const [hopDistances, setHopDistances] = useState<HopDistanceMap>({})
   const [loading, setLoading] = useState(true)
   const [isHondiusOpen, setIsHondiusOpen] = useState(false)
+  const [hondiusNodeId, setHondiusNodeId] = useState<string | null>(null)
+  const [isConnectedToHondius, setIsConnectedToHondius] = useState(false)
 
   // New state for Phase 1+2
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -257,6 +261,23 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       setEdges(graphEdges)
       setLoading(false)
 
+      // Check for Hondius node and connection status
+      const hondiusNode = graphNodes.find(n =>
+        n.name.toLowerCase().includes('hondius') ||
+        n.name.toLowerCase().includes('khaos')
+      )
+      if (hondiusNode) {
+        setHondiusNodeId(hondiusNode.id)
+        // Check if user is connected to Hondius
+        if (userNodeId) {
+          const isConnected = graphEdges.some(e =>
+            (e.source === userNodeId && e.target === hondiusNode.id) ||
+            (e.source === hondiusNode.id && e.target === userNodeId)
+          )
+          setIsConnectedToHondius(isConnected)
+        }
+      }
+
       // Set initial centered node in demo mode (Zaphod Beeblebrox)
       if (activeDemoMode && graphNodes.length > 0 && !centeredNodeId) {
         // Find Zaphod node (hardcoded ID from seed data)
@@ -358,6 +379,41 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
     setCenteredNodeId(null)
     setSelectedNodeId(null)
     setIsPanelOpen(false)
+  }
+
+  // Handle connecting to Hondius
+  const handleConnectToHondius = async () => {
+    if (!userNodeId || !hondiusNodeId) {
+      alert('Unable to connect: missing node IDs')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/edges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_node_id: userNodeId,
+          to_node_id: hondiusNodeId,
+          label: 'uses for taxonomy classification'
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(`Failed to connect: ${error.error}`)
+        return
+      }
+
+      // Update local state
+      setEdges(prev => [...prev, { source: userNodeId, target: hondiusNodeId }])
+      setIsConnectedToHondius(true)
+
+      console.log('Connected to Hondius successfully')
+    } catch (error) {
+      console.error('Error connecting to Hondius:', error)
+      alert('Failed to connect to service')
+    }
   }
 
   // Handle node deletion
@@ -512,15 +568,24 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       className="w-full h-[600px] border relative rounded-lg"
       style={{ borderColor, backgroundColor }}
     >
-      {/* Control Buttons */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
-        {/* Theme Toggle */}
-        <div className="scale-90">
-          <ThemeToggle />
-        </div>
+      {/* User Info & Controls */}
+      <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
+        {/* Left: User Info */}
+        {userName && (
+          <div className="px-4 py-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg font-sans text-sm text-gray-700 dark:text-gray-300 shadow-lg">
+            <span className="font-medium">{userName}</span>
+          </div>
+        )}
 
-        {/* Demo/Real Toggle Button */}
-        <button
+        {/* Right: All Control Buttons in ONE line */}
+        <div className="flex gap-2 items-center">
+          {/* Theme Toggle */}
+          <div className="scale-90">
+            <ThemeToggle />
+          </div>
+
+          {/* Demo/Real Toggle */}
+          <button
           onClick={handleToggleDemoMode}
           className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
           style={{
@@ -641,11 +706,40 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
             Center Me
           </button>
         )}
+
+        {/* Sign Out Button */}
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
+            style={{
+              borderColor: accentColor,
+              color: accentColor
+            }}
+            title="Sign out"
+          >
+            <svg
+              className="inline-block w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+            Sign Out
+          </button>
+        )}
+        </div>
       </div>
 
       {/* Graph stats */}
       <div
-        className="absolute top-4 left-4 z-10 font-sans text-sm space-y-2"
+        className="absolute top-20 left-4 z-10 font-sans text-sm space-y-2"
         style={{ color: accentColor }}
       >
         {/* Node counts by visibility */}
@@ -775,6 +869,8 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       <HondiusInterface
         isOpen={isHondiusOpen}
         onClose={() => setIsHondiusOpen(false)}
+        onConnect={userNodeId ? handleConnectToHondius : undefined}
+        isConnected={isConnectedToHondius}
       />
 
       {/* Inspect Panel (Phase 1) */}

@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 interface HondiusInterfaceProps {
   isOpen: boolean
   onClose: () => void
+  onConnect?: () => void
+  isConnected?: boolean
 }
 
 type Tab = 'classify' | 'curate'
@@ -44,7 +46,7 @@ interface CurationResult {
   snark: string
 }
 
-export default function HondiusInterface({ isOpen, onClose }: HondiusInterfaceProps) {
+export default function HondiusInterface({ isOpen, onClose, onConnect, isConnected }: HondiusInterfaceProps) {
   const [activeTab, setActiveTab] = useState<Tab>('classify')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -131,22 +133,42 @@ export default function HondiusInterface({ isOpen, onClose }: HondiusInterfacePr
   return (
     <div className="fixed inset-y-0 right-0 w-[600px] bg-white dark:bg-gray-900 shadow-2xl z-50 border-l border-gray-200 dark:border-gray-800 flex flex-col animate-slide-in">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-['Space_Grotesk']">
-            Hondius
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            KHAOS Classification & Curation Agent
-          </p>
+      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-['Space_Grotesk']">
+              Hondius
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              KHAOS Classification & Curation Agent
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-2xl leading-none text-gray-600 dark:text-gray-400"
+            aria-label="Close"
+          >
+            ×
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-2xl leading-none text-gray-600 dark:text-gray-400"
-          aria-label="Close"
-        >
-          ×
-        </button>
+
+        {/* Connect Button */}
+        {onConnect && (
+          <div className="mt-4">
+            {isConnected ? (
+              <div className="px-4 py-2 bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg text-sm text-center">
+                ✓ Connected to your network
+              </div>
+            ) : (
+              <button
+                onClick={onConnect}
+                className="w-full px-4 py-2 bg-[var(--color-klein-bottle-green)] dark:bg-[var(--color-deep-space-blue)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity text-sm"
+              >
+                + Connect to This Service
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
