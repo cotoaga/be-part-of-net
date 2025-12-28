@@ -380,7 +380,7 @@ export default function HondiusInterface({ isOpen, onClose }: HondiusInterfacePr
                       {curateResult.personality_voice} says:
                     </span>
                     <p className="mt-2 text-sm italic text-gray-700 dark:text-gray-300 leading-relaxed">
-                      "{curateResult.snark}"
+                      &ldquo;{curateResult.snark}&rdquo;
                     </p>
                   </div>
                 </div>

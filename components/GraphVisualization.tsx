@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import Node3D from './Node3D'
 import Edge3D from './Edge3D'
 import HondiusInterface from './HondiusInterface'
+import InspectPanel from './InspectPanel'
+import AddConnectionModal, { type ConnectionFormData } from './AddConnectionModal'
 import { useForceSimulation, SimulationNode } from './ForceSimulation'
 import * as THREE from 'three'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -93,6 +95,16 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
   const [loading, setLoading] = useState(true)
   const [isHondiusOpen, setIsHondiusOpen] = useState(false)
 
+  // New state for Phase 1+2
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
+  const [isAddConnectionOpen, setIsAddConnectionOpen] = useState(false)
+  const [userNodeId, setUserNodeId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Store full node data for inspect panel
+  const [fullNodesData, setFullNodesData] = useState<Map<string, any>>(new Map())
+
   // Camera animation state
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 15])
   const [orbitTarget, setOrbitTarget] = useState<[number, number, number]>([0, 0, 0])
@@ -101,6 +113,37 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
   const backgroundColor = theme === 'light' ? '#FAFAFA' : '#0A0A0A'
   const accentColor = theme === 'light' ? '#00A86B' : '#0088FF' // Klein Bottle Green / Deep Space Blue
   const borderColor = theme === 'light' ? '#E5E7EB' : '#374151' // gray-200 / gray-700
+
+  // Fetch user's node ID (Phase 1+2)
+  useEffect(() => {
+    if (isDemoMode) return // Skip in demo mode
+
+    const fetchUserNode = async () => {
+      const supabase = createClient()
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+
+        // Fetch user's node
+        const response = await fetch('/api/me/node')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.node) {
+            setUserNodeId(data.node.id)
+            // Auto-center on user's node if not already centered
+            if (!centeredNodeId) {
+              setCenteredNodeId(data.node.id)
+            }
+          }
+        }
+      }
+    }
+
+    fetchUserNode()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemoMode])
 
   // Fetch data from Supabase OR use provided data
   useEffect(() => {
@@ -123,7 +166,7 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       // Fetch nodes (filter by is_demo if in demo mode)
       const nodesQuery = supabase
         .from('nodes')
-        .select('id, type, name, description, email, url, confirmed, is_demo, is_global_service')
+        .select('id, type, name, description, email, url, endpoint_url, confirmed, is_demo, is_global_service, controlled_by')
 
       if (isDemoMode) {
         nodesQuery.eq('is_demo', true)
@@ -193,6 +236,13 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
         source: edge.from_node_id,
         target: edge.to_node_id,
       })) || []
+
+      // Store full node data for inspect panel
+      const fullDataMap = new Map()
+      nodesData?.forEach((node) => {
+        fullDataMap.set(node.id, node)
+      })
+      setFullNodesData(fullDataMap)
 
       setNodes(graphNodes)
       setEdges(graphEdges)
@@ -273,6 +323,98 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
 
     console.log('Node clicked, setting as centered:', nodeId)
     setCenteredNodeId(nodeId)
+
+    // Open inspect panel (Phase 1)
+    setSelectedNodeId(nodeId)
+    setIsPanelOpen(true)
+  }
+
+  // Handle "Center Me" button click (Phase 1)
+  const handleCenterMe = () => {
+    if (userNodeId) {
+      setCenteredNodeId(userNodeId)
+      setSelectedNodeId(userNodeId)
+      setIsPanelOpen(true)
+    }
+  }
+
+  // Handle connection creation (Phase 2)
+  const handleCreateConnection = async (formData: ConnectionFormData) => {
+    if (!userNodeId) {
+      throw new Error('User node not found')
+    }
+
+    try {
+      // Step 1: Create the node
+      const nodeResponse = await fetch('/api/nodes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: formData.type,
+          name: formData.name,
+          description: formData.description || undefined,
+          url: formData.url || undefined,
+          endpoint_url: formData.endpoint_url || undefined,
+        })
+      })
+
+      if (!nodeResponse.ok) {
+        const error = await nodeResponse.json()
+        throw new Error(error.error || 'Failed to create node')
+      }
+
+      const nodeData = await nodeResponse.json()
+      const newNode = nodeData.node
+
+      // Step 2: Create the edge
+      const edgeResponse = await fetch('/api/edges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_node_id: userNodeId,
+          to_node_id: newNode.id,
+          label: formData.label || undefined
+        })
+      })
+
+      if (!edgeResponse.ok) {
+        const error = await edgeResponse.json()
+        throw new Error(error.error || 'Failed to create edge')
+      }
+
+      // Step 3: Update local state with new node and edge
+      const newSimNode: SimulationNode = {
+        id: newNode.id,
+        name: newNode.name,
+        description: newNode.description,
+        type: newNode.type as NodeType,
+        temperature: 5.0,
+        position: [
+          (Math.random() - 0.5) * 10,
+          (Math.random() - 0.5) * 10,
+          (Math.random() - 0.5) * 10,
+        ],
+        velocity: [0, 0, 0],
+        edges: [userNodeId],
+        confirmed: newNode.confirmed ?? true,
+        is_global_service: false
+      }
+
+      setNodes(prev => [...prev, newSimNode])
+      setEdges(prev => [...prev, { source: userNodeId, target: newNode.id }])
+
+      // Add to full nodes data map
+      setFullNodesData(prev => {
+        const newMap = new Map(prev)
+        newMap.set(newNode.id, newNode)
+        return newMap
+      })
+
+      console.log('Connection created successfully:', newNode.name)
+    } catch (error) {
+      console.error('Error creating connection:', error)
+      throw error
+    }
   }
 
   // Handle background click - don't deselect in fog-of-war mode
@@ -315,6 +457,35 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       className="w-full h-[600px] border relative rounded-lg"
       style={{ borderColor, backgroundColor }}
     >
+      {/* Center Me Button (Phase 1) */}
+      {userNodeId && !isDemoMode && (
+        <button
+          onClick={handleCenterMe}
+          className="absolute top-4 right-4 z-10 px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
+          style={{
+            borderColor: accentColor,
+            color: accentColor
+          }}
+          title="Center on your node"
+        >
+          <svg
+            className="inline-block w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+            <circle cx="12" cy="12" r="3" strokeWidth={2} />
+          </svg>
+          Center Me
+        </button>
+      )}
+
       {/* Graph stats */}
       <div
         className="absolute top-4 left-4 z-10 font-sans text-sm space-y-2"
@@ -446,6 +617,31 @@ export default function GraphVisualization({ data, isDemoMode = false }: GraphVi
       <HondiusInterface
         isOpen={isHondiusOpen}
         onClose={() => setIsHondiusOpen(false)}
+      />
+
+      {/* Inspect Panel (Phase 1) */}
+      <InspectPanel
+        isOpen={isPanelOpen}
+        onClose={() => {
+          setIsPanelOpen(false)
+          setSelectedNodeId(null)
+        }}
+        node={
+          selectedNodeId && fullNodesData.has(selectedNodeId)
+            ? fullNodesData.get(selectedNodeId)
+            : null
+        }
+        currentUserId={currentUserId}
+        onAddConnection={() => {
+          setIsAddConnectionOpen(true)
+        }}
+      />
+
+      {/* Add Connection Modal (Phase 2) */}
+      <AddConnectionModal
+        isOpen={isAddConnectionOpen}
+        onClose={() => setIsAddConnectionOpen(false)}
+        onSubmit={handleCreateConnection}
       />
     </div>
   )
