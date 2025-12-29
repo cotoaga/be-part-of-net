@@ -123,6 +123,10 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false)
 
+  // Connect mode state (for creating edges)
+  const [isConnectMode, setIsConnectMode] = useState(false)
+  const [connectSourceNodeId, setConnectSourceNodeId] = useState<string | null>(null)
+
   // Theme-aware colors
   const backgroundColor = theme === 'light' ? '#FAFAFA' : '#0A0A0A'
   const accentColor = theme === 'light' ? '#00A86B' : '#0088FF' // Klein Bottle Green / Deep Space Blue
@@ -170,6 +174,17 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
     fetchUserNode()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDemoMode])
+
+  // Handle ESC key to exit connect mode
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isConnectMode) {
+        handleExitConnectMode()
+      }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isConnectMode])
 
   // Fetch data from Supabase OR use provided data
   useEffect(() => {
@@ -400,6 +415,24 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       console.error('Error deleting node:', error)
       alert('Failed to delete node')
     }
+  }
+
+  // Handle entering connect mode (from InspectPanel "Connect" button)
+  const handleEnterConnectMode = () => {
+    if (!centeredNodeId) return
+
+    console.log('[Connect Mode] Entering connect mode from center:', centeredNodeId)
+    setIsConnectMode(true)
+    setConnectSourceNodeId(centeredNodeId) // Always connect FROM the centered node
+    setIsPanelOpen(false) // Close inspect panel
+    setSelectedNodeId(null) // Clear selection
+  }
+
+  // Handle exiting connect mode
+  const handleExitConnectMode = () => {
+    console.log('[Connect Mode] Exiting connect mode')
+    setIsConnectMode(false)
+    setConnectSourceNodeId(null)
   }
 
   // Handle connection creation (Phase 2)
@@ -873,10 +906,13 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
             : null
         }
         currentUserId={currentUserId}
+        isEditMode={isEditMode}
+        isCenteredNode={selectedNodeId === centeredNodeId}
         onAddConnection={() => {
           console.log('[DEBUG] Opening Add Connection modal. Selected node:', selectedNodeId)
           setIsAddConnectionOpen(true)
         }}
+        onConnect={handleEnterConnectMode}
         onDeleteNode={handleDeleteNode}
         connections={
           selectedNodeId

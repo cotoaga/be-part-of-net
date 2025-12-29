@@ -17,7 +17,10 @@ interface InspectPanelProps {
     controlled_by?: string[]
   } | null
   currentUserId: string | null
+  isEditMode?: boolean
+  isCenteredNode?: boolean
   onAddConnection?: () => void
+  onConnect?: () => void
   onDeleteNode?: (nodeId: string) => void
   connections?: {
     outgoing: Array<{ id: string; name: string }>
@@ -30,7 +33,10 @@ export default function InspectPanel({
   onClose,
   node,
   currentUserId,
+  isEditMode = false,
+  isCenteredNode = false,
   onAddConnection,
+  onConnect,
   onDeleteNode,
   connections
 }: InspectPanelProps) {
@@ -199,10 +205,34 @@ export default function InspectPanel({
             </div>
           )}
 
-          {/* Action Buttons - only for nodes you control */}
-          {isOwnNode && (onAddConnection || onDeleteNode) && (
+          {/* Action Buttons */}
+          {(isEditMode || isOwnNode) && (onConnect || onAddConnection || onDeleteNode) && (
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-              {onAddConnection && (
+              {/* Connect Button - visible in edit mode, for non-center nodes */}
+              {isEditMode && !isCenteredNode && onConnect && (
+                <button
+                  onClick={onConnect}
+                  className="w-full px-6 py-3 bg-[var(--color-klein-bottle-green)] dark:bg-[var(--color-deep-space-blue)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                    />
+                  </svg>
+                  Connect
+                </button>
+              )}
+
+              {/* Add Connection - only for nodes you control */}
+              {isOwnNode && onAddConnection && (
                 <button
                   onClick={onAddConnection}
                   className="w-full px-6 py-3 bg-[var(--color-klein-bottle-green)] dark:bg-[var(--color-deep-space-blue)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
@@ -211,8 +241,8 @@ export default function InspectPanel({
                 </button>
               )}
 
-              {/* Delete Button - only for app/mcp nodes you control */}
-              {onDeleteNode && node.type !== 'person' && (
+              {/* Delete Button - only for app nodes you control (edit mode) */}
+              {isEditMode && isOwnNode && onDeleteNode && node.type === 'app' && (
                 <button
                   onClick={() => {
                     if (window.confirm(`Delete "${node.name}"? This will remove the node and all its connections.`)) {
