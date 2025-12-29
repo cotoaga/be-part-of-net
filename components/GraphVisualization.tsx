@@ -8,6 +8,7 @@ import Node3D from './Node3D'
 import Edge3D from './Edge3D'
 import InspectPanel from './InspectPanel'
 import AddConnectionModal, { type ConnectionFormData } from './AddConnectionModal'
+import ConnectLabelModal from './ConnectLabelModal'
 import ThemeToggle from './ThemeToggle'
 import { useForceSimulation, SimulationNode } from './ForceSimulation'
 import * as THREE from 'three'
@@ -132,6 +133,8 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   // Connect mode state (for creating edges)
   const [isConnectMode, setIsConnectMode] = useState(false)
   const [connectSourceNodeId, setConnectSourceNodeId] = useState<string | null>(null)
+  const [connectTargetNodeId, setConnectTargetNodeId] = useState<string | null>(null)
+  const [isConnectLabelModalOpen, setIsConnectLabelModalOpen] = useState(false)
 
   // Theme-aware colors
   const backgroundColor = theme === 'light' ? '#FAFAFA' : '#0A0A0A'
@@ -355,49 +358,30 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   const handleNodeClick = async (nodeId: string) => {
     const node = simulatedNodes.find(n => n.id === nodeId)
 
-    // CONNECT MODE: Create edge and exit
+    // CONNECT MODE: Store target and open label modal
     if (isConnectMode && connectSourceNodeId) {
-      console.log('[Connect Mode] Creating edge from', connectSourceNodeId, 'to', nodeId)
+      console.log('[Connect Mode] Target selected:', nodeId)
 
-      // Prompt for edge label
-      const label = prompt('Label this connection (optional):') || ''
-
-      try {
-        const response = await fetch('/api/edges', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from_node_id: connectSourceNodeId,
-            to_node_id: nodeId,
-            label: label || undefined
-          })
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          alert(`Failed to create edge: ${error.error}`)
-          return
-        }
-
-        const edgeData = await response.json()
-        console.log('[Connect Mode] Edge created:', edgeData)
-
-        // Add edge to local state
-        setEdges(prev => [...prev, {
-          id: edgeData.edge.id,
-          source: connectSourceNodeId,
-          target: nodeId,
-          label: label || undefined,
-          created_by: edgeData.edge.created_by
-        }])
-
-        // Exit connect mode
-        handleExitConnectMode()
-      } catch (error) {
-        console.error('[Connect Mode] Error creating edge:', error)
-        alert('Failed to create connection')
+      // Prevent self-connection
+      if (nodeId === connectSourceNodeId) {
+        alert('Cannot connect a node to itself')
+        return
       }
 
+      // Check if edge already exists (either direction)
+      const edgeExists = edges.some(
+        e => (e.source === connectSourceNodeId && e.target === nodeId) ||
+             (e.source === nodeId && e.target === connectSourceNodeId)
+      )
+
+      if (edgeExists) {
+        alert('Connection already exists between these nodes')
+        return
+      }
+
+      // Store target and open label modal
+      setConnectTargetNodeId(nodeId)
+      setIsConnectLabelModalOpen(true)
       return
     }
 
@@ -489,6 +473,49 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
     console.log('[Connect Mode] Exiting connect mode')
     setIsConnectMode(false)
     setConnectSourceNodeId(null)
+    setConnectTargetNodeId(null)
+    setIsConnectLabelModalOpen(false)
+  }
+
+  // Handle edge creation with label
+  const handleCreateEdge = async (label: string) => {
+    if (!connectSourceNodeId || !connectTargetNodeId) return
+
+    try {
+      const response = await fetch('/api/edges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_node_id: connectSourceNodeId,
+          to_node_id: connectTargetNodeId,
+          label: label || undefined
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(`Failed to create edge: ${error.error}`)
+        return
+      }
+
+      const edgeData = await response.json()
+      console.log('[Connect Mode] Edge created:', edgeData)
+
+      // Add edge to local state
+      setEdges(prev => [...prev, {
+        id: edgeData.edge.id,
+        source: connectSourceNodeId,
+        target: connectTargetNodeId,
+        label: label || undefined,
+        created_by: edgeData.edge.created_by
+      }])
+
+      // Exit connect mode
+      handleExitConnectMode()
+    } catch (error) {
+      console.error('[Connect Mode] Error creating edge:', error)
+      alert('Failed to create connection')
+    }
   }
 
   // Handle connection creation (Phase 2)
@@ -947,6 +974,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
                 temperature={node.temperature}
                 edgeCount={node.edges.length}
                 onClick={handleNodeClick}
+                onHover={setHoveredNodeId}
                 isCentered={visibility.isCentered}
                 isSelected={visibility.isCentered}
                 isClickable={visibility.isClickable}
@@ -1024,6 +1052,40 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         onClose={() => setIsAddConnectionOpen(false)}
         onSubmit={handleCreateConnection}
       />
+
+      {/* Connect Label Modal */}
+      <ConnectLabelModal
+        isOpen={isConnectLabelModalOpen}
+        onClose={() => {
+          setIsConnectLabelModalOpen(false)
+          setConnectTargetNodeId(null)
+        }}
+        onSubmit={handleCreateEdge}
+        sourceNodeName={
+          connectSourceNodeId && fullNodesData.has(connectSourceNodeId)
+            ? fullNodesData.get(connectSourceNodeId)?.name || 'Unknown'
+            : 'Unknown'
+        }
+        targetNodeName={
+          connectTargetNodeId && fullNodesData.has(connectTargetNodeId)
+            ? fullNodesData.get(connectTargetNodeId)?.name || 'Unknown'
+            : 'Unknown'
+        }
+      />
+
+      {/* Connect Mode Status Message */}
+      {isConnectMode && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="px-6 py-3 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-2 rounded-lg font-sans text-sm font-medium shadow-lg"
+            style={{
+              borderColor: accentColor,
+              color: accentColor
+            }}
+          >
+            Select target node (ESC to cancel)
+          </div>
+        </div>
+      )}
     </div>
   )
 }
