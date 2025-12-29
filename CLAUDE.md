@@ -163,6 +163,10 @@ be-part-of-net/
   - Theme-aware colors (Klein Bottle Green / Deep Space Blue)
   - `isDemoMode` prop for Zaphod's Zoo rendering
   - Enforced traversal (can't click nodes beyond hop 4)
+  - Edit mode toggle (for authenticated users)
+  - Connect mode for creating edges between nodes
+  - Hover tracking for connect mode visual feedback
+  - Status message display during connect mode
 - **Existing Features:**
   - Temperature + type-based node colors
   - Node size by connection count
@@ -178,6 +182,7 @@ be-part-of-net/
   - Type-based coloring: blue (person), orange (app), purple (mcp)
   - Ghost effect for unconfirmed person nodes (invites)
   - Saturn ring when centered
+  - Hover callback: Reports hover state to parent (for connect mode)
 - **Existing Features:**
   - Temperature gradient overlay
   - Size scales with connection count
@@ -223,23 +228,68 @@ be-part-of-net/
 - **Connections Inspector:** Lists incoming and outgoing edges
   - Outgoing: `→ Target Node Name (count)`
   - Incoming: `← Source Node Name (count)`
+  - Shows edge labels (only for edges created by current user)
   - Helps debug graph structure
-- Action buttons (for nodes you control):
-  - "+ Add Connection" (opens AddConnectionModal)
-  - "Delete Node" (app/mcp only, not person nodes)
+- Action buttons (conditional rendering):
+  - **"Connect"** (edit mode, non-centered nodes): Enters connect mode
+  - **"+ Add Connection"** (owned nodes): Opens AddConnectionModal
+  - **"Delete Node"** (edit mode, owned app nodes only)
 - Close on Escape key or outside click
 
 ### AddConnectionModal.tsx
 - Modal form for creating new nodes and connections
-- Radio selection: App or MCP type
+- Radio selection: Person or App type
 - Form fields:
   - Name (required)
+  - Email (Person only, optional)
   - Description (optional)
-  - URL (optional)
-  - Endpoint URL (MCP only, optional)
+  - URL (required for App, optional for Person)
+  - Endpoint URL (App only, optional - for MCP servers)
   - Relationship label (optional, private to creator)
 - Creates node + edge atomically
 - Admin feature: Creates connection from selected node (not just from user's node)
+
+### ConnectLabelModal.tsx
+- Modal form for labeling new edge connections
+- Displayed after selecting target node in connect mode
+- Shows connection direction: "From: [source] → To: [target]"
+- Single input field for optional label (private to creator)
+- Keyboard shortcuts: ESC to cancel, Enter to submit
+- Validates against self-connections and duplicate edges
+
+## Edit Mode & Connect Mode
+
+### Edit Mode
+- Toggle button visible for authenticated users (non-demo) and admins
+- When active:
+  - "+" button appears to create new nodes
+  - "Connect" button appears in InspectPanel for non-centered nodes
+  - Delete button enabled for owned app nodes
+- Visual indicator: Button highlighted with accent color
+
+### Connect Mode (Edge Creation Flow)
+1. **Enter:** User clicks "Connect" button in InspectPanel
+   - Source node: Currently centered node
+   - InspectPanel closes
+   - Visual state: All nodes fade to 20% opacity
+   - Status message appears: "Select target node (ESC to cancel)"
+   - Cursor changes to crosshair
+
+2. **Hover:** User hovers over potential target nodes
+   - Hovered node jumps to 100% opacity
+   - Visual highlight (scale + glow)
+   - Source node maintains 80% opacity
+
+3. **Select Target:** User clicks a node
+   - Validates: No self-connections, no duplicate edges
+   - Opens ConnectLabelModal
+   - User enters optional label
+   - Edge created with direction: source → target
+
+4. **Exit:** ESC key, outside click, or successful creation
+   - All nodes return to normal opacity
+   - Fog-of-war visibility rules resume
+   - Connect mode state cleared
 
 ## Authentication Flow
 
@@ -643,19 +693,19 @@ Vercel build command: `npm run vercel-build`
 - Network reset functionality
 - Matrix rain background (terminal routes)
 - **Admin system** (is_admin field + middleware)
+- **Edit mode** with toggle button (for authenticated users)
+- **Node creation UI** - AddConnectionModal creates person/app nodes with edges
+- **Edge creation UI** - Connect mode with visual feedback and label input
+- **Edge labels** - Full UI to add labels via ConnectLabelModal, view in InspectPanel
+- **Node inspection** - InspectPanel shows details, connections, labels
 
 ### ⚠️ Partially Implemented
 - **Database schema migration** - Both schemas exist, full migration pending
 - **Info cards** on `/network` - UI exists but shows "--" (queries not implemented)
-- **Edge labels** - Database field exists but no UI to add/view
 - **Unconfirmed nodes** - Visual ghost effect exists but no invite UI
 
 ### ❌ Not Yet Implemented
-- **Node creation UI** - No form to add new person/app/mcp nodes
-- **Edge creation UI** - No way to manually connect nodes
-- **Invitation system** - No invite sending/accepting flow
-- **Tag interface** - Edge labels exist but no UI
-- **Node detail modal** - Clicking nodes doesn't show full profile
+- **Invitation system** - No invite sending/accepting flow (unconfirmed person nodes exist but no flow)
 - **Real-time updates** - No Supabase subscriptions (must refresh)
 - **Profile editing** - No way to update your own node after creation
 - **Search/filter** - No way to search nodes or filter by type/temperature
@@ -789,12 +839,20 @@ This project embraces a **dual aesthetic**:
 
 ---
 
-**Last Updated:** 2025-11-17
+**Last Updated:** 2025-12-29
 **Project Version:** 0.1.0
 **Maintained by:** kydroon
 
 **Recent Commits:**
-- `9b56aec9` - node creation (Nov 9, 2025)
-- `13eb3576` - clear visibility statistics, centered node info, new footer credits
-- `caf7306d` - New Zoo DB Schema (complete schema replacement)
-- `42a5d378` - build problem fix
+- `a7507713` - feat(inspector): display edge labels in connections list
+- `890ca4ff` - feat(connect-mode): implement edge creation with opacity effects
+- `c925db8d` - feat(connect-mode): add Connect button and connect mode foundation
+- `f0a221b9` - feat(graph): update node creation to include email field
+- `6cc7a0ba` - feat(modal): refactor AddConnectionModal for Person/App types
+
+**Recent Changes (2025-12-29):**
+- Replaced `prompt()` with proper ConnectLabelModal for edge label input
+- Enhanced connect mode with hover highlight effects (opacity jumps to 100% on hover)
+- Added status message display during connect mode ("Select target node (ESC to cancel)")
+- Improved validation: prevents self-connections and duplicate edges
+- Fixed dynamic route configuration for `/api/me/node`
