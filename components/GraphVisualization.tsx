@@ -343,9 +343,50 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   }, [centeredNodeId, simulatedNodes])
 
   // Handle node click with enforced traversal
-  const handleNodeClick = (nodeId: string) => {
+  const handleNodeClick = async (nodeId: string) => {
     const node = simulatedNodes.find(n => n.id === nodeId)
 
+    // CONNECT MODE: Create edge and exit
+    if (isConnectMode && connectSourceNodeId) {
+      console.log('[Connect Mode] Creating edge from', connectSourceNodeId, 'to', nodeId)
+
+      // Prompt for edge label
+      const label = prompt('Label this connection (optional):') || ''
+
+      try {
+        const response = await fetch('/api/edges', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from_node_id: connectSourceNodeId,
+            to_node_id: nodeId,
+            label: label || undefined
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          alert(`Failed to create edge: ${error.error}`)
+          return
+        }
+
+        const edgeData = await response.json()
+        console.log('[Connect Mode] Edge created:', edgeData)
+
+        // Add edge to local state
+        setEdges(prev => [...prev, { source: connectSourceNodeId, target: nodeId }])
+
+        // Exit connect mode
+        handleExitConnectMode()
+      } catch (error) {
+        console.error('[Connect Mode] Error creating edge:', error)
+        alert('Failed to create connection')
+      }
+
+      return
+    }
+
+    // NORMAL MODE: Check visibility and center node
     const visibility = getNodeVisibility(nodeId, centeredNodeId, hopDistances)
 
     // Enforced traversal: can't click hop 4+ nodes
@@ -569,7 +610,11 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   return (
     <div
       className="w-full h-[600px] border relative rounded-lg"
-      style={{ borderColor, backgroundColor }}
+      style={{
+        borderColor,
+        backgroundColor,
+        cursor: isConnectMode ? 'crosshair' : 'default'
+      }}
     >
       {/* Centered Node Info & Controls */}
       <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start">
@@ -882,7 +927,12 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
                 isSelected={visibility.isCentered}
                 isClickable={visibility.isClickable}
                 showLabel={visibility.showLabel}
-                opacity={visibility.opacity}
+                opacity={
+                  // Connect mode opacity: 20% for all except center/hovered
+                  isConnectMode
+                    ? (node.id === centeredNodeId || node.id === hoveredNodeId ? 1.0 : 0.2)
+                    : visibility.opacity
+                }
                 nodeType={node.type}
                 confirmed={node.confirmed}
                 accentColor={accentColor}
