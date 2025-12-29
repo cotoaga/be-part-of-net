@@ -14,6 +14,7 @@ interface Node3DProps {
   temperature: number
   edgeCount: number
   onClick?: (id: string) => void
+  onHover?: (id: string | null) => void
   isSelected?: boolean
   isCentered?: boolean
   isClickable?: boolean
@@ -69,6 +70,7 @@ export default function Node3D({
   temperature,
   edgeCount,
   onClick,
+  onHover,
   isSelected = false,
   isCentered = false,
   isClickable = true,
@@ -103,12 +105,14 @@ export default function Node3D({
     e.stopPropagation()
     if (isClickable) {
       setHovered(true)
+      onHover?.(id)
       document.body.style.cursor = 'pointer'
     }
   }
 
   const handlePointerOut = () => {
     setHovered(false)
+    onHover?.(null)
     document.body.style.cursor = 'default'
   }
 
