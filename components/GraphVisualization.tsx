@@ -426,6 +426,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         body: JSON.stringify({
           type: formData.type,
           name: formData.name,
+          email: formData.email || undefined, // Person-specific
           description: formData.description || undefined,
           url: formData.url || undefined,
           endpoint_url: formData.endpoint_url || undefined,
