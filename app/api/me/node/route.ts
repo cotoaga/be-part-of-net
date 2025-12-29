@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+// Mark as dynamic since it uses cookies for auth
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/me/node
  * Returns the current user's person node
