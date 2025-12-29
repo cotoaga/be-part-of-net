@@ -120,6 +120,9 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   const [isDemoModeLocal, setIsDemoModeLocal] = useState(isDemoMode)
   const activeDemoMode = isDemoModeLocal
 
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false)
+
   // Theme-aware colors
   const backgroundColor = theme === 'light' ? '#FAFAFA' : '#0A0A0A'
   const accentColor = theme === 'light' ? '#00A86B' : '#0088FF' // Klein Bottle Green / Deep Space Blue
@@ -534,14 +537,14 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       className="w-full h-[600px] border relative rounded-lg"
       style={{ borderColor, backgroundColor }}
     >
-      {/* User Info & Controls */}
+      {/* Centered Node Info & Controls */}
       <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start">
-        {/* Left: User Info + Stats */}
-        {userName && (
+        {/* Left: Centered Node Info + Stats */}
+        {centeredNodeId && fullNodesData.has(centeredNodeId) && (
           <div className="px-4 py-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg font-sans text-sm text-gray-700 dark:text-gray-300 shadow-lg">
-            <div className="font-medium text-base mb-1">{userName}</div>
-            {userNodeDescription && (
-              <div className="text-xs opacity-70 mb-3">{userNodeDescription}</div>
+            <div className="font-medium text-base mb-1">{fullNodesData.get(centeredNodeId)?.name}</div>
+            {fullNodesData.get(centeredNodeId)?.description && (
+              <div className="text-xs opacity-70 mb-3">{fullNodesData.get(centeredNodeId)?.description}</div>
             )}
             {/* Node Stats */}
             <div className="space-y-0.5 text-xs border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
@@ -617,6 +620,35 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
             </>
           )}
         </button>
+
+        {/* Edit Mode Toggle - visible for admin (both networks) or authenticated user (real network only) */}
+        {((isAdmin) || (currentUserId && !activeDemoMode)) && (
+          <button
+            onClick={() => setIsEditMode(!isEditMode)}
+            className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
+            style={{
+              borderColor: isEditMode ? accentColor : borderColor,
+              color: isEditMode ? accentColor : 'inherit',
+              backgroundColor: isEditMode ? (theme === 'light' ? 'rgba(0, 168, 107, 0.1)' : 'rgba(0, 136, 255, 0.1)') : undefined
+            }}
+            title={isEditMode ? "Exit edit mode" : "Enter edit mode"}
+          >
+            <svg
+              className="inline-block w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            {isEditMode ? 'Editing' : 'Edit'}
+          </button>
+        )}
 
         {/* Pause/Resume Button */}
         <button
