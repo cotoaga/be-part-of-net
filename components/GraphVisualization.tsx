@@ -650,6 +650,33 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
           </button>
         )}
 
+        {/* Create Node Button (+ button) - visible only in edit mode */}
+        {isEditMode && (
+          <button
+            onClick={() => setIsAddConnectionOpen(true)}
+            className="px-4 py-2 bg-white dark:bg-gray-800 border-2 rounded-lg font-sans text-sm font-medium transition-all hover:scale-105 shadow-lg"
+            style={{
+              borderColor: accentColor,
+              color: accentColor
+            }}
+            title="Create new node"
+          >
+            <svg
+              className="inline-block w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </button>
+        )}
+
         {/* Pause/Resume Button */}
         <button
           onClick={toggleSimulation}
