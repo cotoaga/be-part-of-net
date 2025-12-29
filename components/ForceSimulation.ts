@@ -11,7 +11,6 @@ export interface SimulationNode {
   velocity: [number, number, number]
   edges: string[]
   confirmed?: boolean
-  is_global_service?: boolean // MCP nodes visible to all (exempt from fog-of-war)
 }
 
 interface SimulationConfig {

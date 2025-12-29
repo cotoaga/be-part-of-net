@@ -40,7 +40,6 @@ export interface Node {
 
   // Special flags
   is_demo: boolean;
-  is_global_service: boolean; // MCP nodes visible to all (exempt from fog-of-war)
 
   // Timestamps
   created_at: string;

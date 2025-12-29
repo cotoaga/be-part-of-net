@@ -6,7 +6,6 @@ import { Suspense, useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Node3D from './Node3D'
 import Edge3D from './Edge3D'
-import HondiusInterface from './HondiusInterface'
 import InspectPanel from './InspectPanel'
 import AddConnectionModal, { type ConnectionFormData } from './AddConnectionModal'
 import ThemeToggle from './ThemeToggle'
@@ -99,9 +98,6 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const [hopDistances, setHopDistances] = useState<HopDistanceMap>({})
   const [loading, setLoading] = useState(true)
-  const [isHondiusOpen, setIsHondiusOpen] = useState(false)
-  const [hondiusNodeId, setHondiusNodeId] = useState<string | null>(null)
-  const [isConnectedToHondius, setIsConnectedToHondius] = useState(false)
 
   // New state for Phase 1+2
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -193,7 +189,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       // Fetch nodes (filter by is_demo if in demo mode)
       const nodesQuery = supabase
         .from('nodes')
-        .select('id, type, name, description, email, url, endpoint_url, confirmed, is_demo, is_global_service, controlled_by')
+        .select('id, type, name, description, email, url, endpoint_url, confirmed, is_demo, controlled_by')
 
       if (activeDemoMode) {
         nodesQuery.eq('is_demo', true)
@@ -256,7 +252,6 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         velocity: [0, 0, 0],
         edges: edgesByNode.get(node.id) || [],
         confirmed: node.confirmed ?? true,
-        is_global_service: node.is_global_service ?? false,
       })) || []
 
       const graphEdges = edgesData?.map((edge) => ({
@@ -274,23 +269,6 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       setNodes(graphNodes)
       setEdges(graphEdges)
       setLoading(false)
-
-      // Check for Hondius node and connection status
-      const hondiusNode = graphNodes.find(n =>
-        n.name.toLowerCase().includes('hondius') ||
-        n.name.toLowerCase().includes('khaos')
-      )
-      if (hondiusNode) {
-        setHondiusNodeId(hondiusNode.id)
-        // Check if user is connected to Hondius
-        if (userNodeId) {
-          const isConnected = graphEdges.some(e =>
-            (e.source === userNodeId && e.target === hondiusNode.id) ||
-            (e.source === hondiusNode.id && e.target === userNodeId)
-          )
-          setIsConnectedToHondius(isConnected)
-        }
-      }
 
       // Set initial centered node in demo mode (Zaphod Beeblebrox)
       if (activeDemoMode && graphNodes.length > 0 && !centeredNodeId) {
@@ -350,14 +328,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   const handleNodeClick = (nodeId: string) => {
     const node = simulatedNodes.find(n => n.id === nodeId)
 
-    // Check if this is a global service MCP (like Hondius)
-    if (node?.type === 'mcp' && node?.is_global_service) {
-      console.log('Global service MCP clicked, opening interface:', node.name)
-      setIsHondiusOpen(true)
-      return
-    }
-
-    const visibility = getNodeVisibility(nodeId, centeredNodeId, hopDistances, node?.is_global_service)
+    const visibility = getNodeVisibility(nodeId, centeredNodeId, hopDistances)
 
     // Enforced traversal: can't click hop 4+ nodes
     if (!visibility.isClickable) {
@@ -393,41 +364,6 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
     setCenteredNodeId(null)
     setSelectedNodeId(null)
     setIsPanelOpen(false)
-  }
-
-  // Handle connecting to Hondius
-  const handleConnectToHondius = async () => {
-    if (!userNodeId || !hondiusNodeId) {
-      alert('Unable to connect: missing node IDs')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/edges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from_node_id: userNodeId,
-          to_node_id: hondiusNodeId,
-          label: 'uses for taxonomy classification'
-        })
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        alert(`Failed to connect: ${error.error}`)
-        return
-      }
-
-      // Update local state
-      setEdges(prev => [...prev, { source: userNodeId, target: hondiusNodeId }])
-      setIsConnectedToHondius(true)
-
-      console.log('Connected to Hondius successfully')
-    } catch (error) {
-      console.error('Error connecting to Hondius:', error)
-      alert('Failed to connect to service')
-    }
   }
 
   // Handle node deletion
@@ -531,8 +467,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         ],
         velocity: [0, 0, 0],
         edges: [sourceNodeId],
-        confirmed: newNode.confirmed ?? true,
-        is_global_service: false
+        confirmed: newNode.confirmed ?? true
       }
 
       setNodes(prev => {
@@ -612,7 +547,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
             <div className="space-y-0.5 text-xs border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
               {(() => {
                 const visibleNodes = simulatedNodes.filter(n => {
-                  const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances, n.is_global_service)
+                  const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances)
                   return vis.opacity > 0 && vis.isVisible
                 }).length
                 const outOfSight = nodes.length - visibleNodes
@@ -819,9 +754,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
               edge.source,
               edge.target,
               centeredNodeId,
-              hopDistances,
-              sourceNode.is_global_service,
-              targetNode.is_global_service
+              hopDistances
             )
 
             if (!edgeVis.isVisible) return null
@@ -839,7 +772,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
 
           {/* Render nodes with fog-of-war */}
           {simulatedNodes.map((node) => {
-            const visibility = getNodeVisibility(node.id, centeredNodeId, hopDistances, node.is_global_service)
+            const visibility = getNodeVisibility(node.id, centeredNodeId, hopDistances)
 
             if (!visibility.isVisible) return null
 
@@ -866,14 +799,6 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
           })}
         </Suspense>
       </Canvas>
-
-      {/* Hondius Interface - slide-in panel */}
-      <HondiusInterface
-        isOpen={isHondiusOpen}
-        onClose={() => setIsHondiusOpen(false)}
-        onConnect={userNodeId ? handleConnectToHondius : undefined}
-        isConnected={isConnectedToHondius}
-      />
 
       {/* Inspect Panel (Phase 1) */}
       <InspectPanel
