@@ -110,6 +110,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   const [userNodeId, setUserNodeId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userNodeDescription, setUserNodeDescription] = useState<string>('')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   // Store full node data for inspect panel
   const [fullNodesData, setFullNodesData] = useState<Map<string, any>>(new Map())
@@ -139,6 +140,17 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUserId(user.id)
+
+        // Check if user is admin
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('auth_user_id', user.id)
+          .maybeSingle()
+
+        if (userData?.is_admin) {
+          setIsAdmin(true)
+        }
 
         // Fetch user's node
         const response = await fetch('/api/me/node')
@@ -453,8 +465,12 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
 
   // Handle connection creation (Phase 2)
   const handleCreateConnection = async (formData: ConnectionFormData) => {
-    if (!userNodeId) {
-      throw new Error('User node not found')
+    // Admin feature: if admin has selected a node, create connection from that node
+    // Otherwise, create from user's node
+    const sourceNodeId = isAdmin && selectedNodeId ? selectedNodeId : userNodeId
+
+    if (!sourceNodeId) {
+      throw new Error('Source node not found')
     }
 
     try {
@@ -484,7 +500,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from_node_id: userNodeId,
+          from_node_id: sourceNodeId,
           to_node_id: newNode.id,
           label: formData.label || undefined
         })
@@ -508,13 +524,20 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
           (Math.random() - 0.5) * 10,
         ],
         velocity: [0, 0, 0],
-        edges: [userNodeId],
+        edges: [sourceNodeId],
         confirmed: newNode.confirmed ?? true,
         is_global_service: false
       }
 
-      setNodes(prev => [...prev, newSimNode])
-      setEdges(prev => [...prev, { source: userNodeId, target: newNode.id }])
+      setNodes(prev => {
+        // Update source node's edges array
+        return prev.map(n =>
+          n.id === sourceNodeId
+            ? { ...n, edges: [...n.edges, newNode.id] }
+            : n
+        ).concat(newSimNode)
+      })
+      setEdges(prev => [...prev, { source: sourceNodeId, target: newNode.id }])
 
       // Add to full nodes data map
       setFullNodesData(prev => {
@@ -523,7 +546,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         return newMap
       })
 
-      console.log('Connection created successfully:', newNode.name)
+      console.log('Connection created successfully:', newNode.name, 'from', sourceNodeId)
     } catch (error) {
       console.error('Error creating connection:', error)
       throw error
