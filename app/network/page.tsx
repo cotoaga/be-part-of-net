@@ -57,58 +57,7 @@ export default function NetworkPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Graph Visualization */}
-        <div className="mb-8">
-          <GraphVisualization onSignOut={handleSignOut} userName={userName} />
-        </div>
-
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
-            <div className="text-sm font-sans font-medium text-soft-gray dark:text-gray-400 mb-1">
-              Total Connections
-            </div>
-            <div className="text-3xl font-display font-bold text-gray-900 dark:text-white">
-              --
-            </div>
-            <p className="text-xs font-sans text-soft-gray dark:text-gray-500 mt-2">
-              Coming soon
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
-            <div className="text-sm font-sans font-medium text-soft-gray dark:text-gray-400 mb-1">
-              Network Depth
-            </div>
-            <div className="text-3xl font-display font-bold text-gray-900 dark:text-white">
-              --
-            </div>
-            <p className="text-xs font-sans text-soft-gray dark:text-gray-500 mt-2">
-              Hops from center
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
-            <div className="text-sm font-sans font-medium text-soft-gray dark:text-gray-400 mb-1">
-              Your Temperature
-            </div>
-            <div className="text-3xl font-display font-bold text-gray-900 dark:text-white">
-              --
-            </div>
-            <p className="text-xs font-sans text-soft-gray dark:text-gray-500 mt-2">
-              Activity level
-            </p>
-          </div>
-        </div>
-
-        {/* Philosophy Section */}
-        <div className="mt-8 bg-green-50 dark:bg-green-900/20 border border-klein-bottle-green/30 dark:border-deep-space-blue/30 rounded-lg p-6">
-          <h3 className="text-lg font-display font-semibold text-klein-bottle-green dark:text-deep-space-blue mb-2">
-            The Anti-Social Social Network
-          </h3>
-          <p className="text-sm font-sans text-gray-700 dark:text-gray-300">
-            No posts. No likes. No endless scroll. Just the network of connections that matter to you.
-          </p>
-        </div>
+        <GraphVisualization onSignOut={handleSignOut} userName={userName} />
       </main>
     </CivilizedLayout>
   )

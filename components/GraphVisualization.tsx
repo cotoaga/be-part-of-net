@@ -109,6 +109,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   const [isAddConnectionOpen, setIsAddConnectionOpen] = useState(false)
   const [userNodeId, setUserNodeId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [userNodeDescription, setUserNodeDescription] = useState<string>('')
 
   // Store full node data for inspect panel
   const [fullNodesData, setFullNodesData] = useState<Map<string, any>>(new Map())
@@ -145,6 +146,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
           const data = await response.json()
           if (data.success && data.node) {
             setUserNodeId(data.node.id)
+            setUserNodeDescription(data.node.description || '')
             // Auto-center on user's node if not already centered
             if (!centeredNodeId) {
               setCenteredNodeId(data.node.id)
@@ -569,11 +571,32 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       style={{ borderColor, backgroundColor }}
     >
       {/* User Info & Controls */}
-      <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
-        {/* Left: User Info */}
+      <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start">
+        {/* Left: User Info + Stats */}
         {userName && (
-          <div className="px-4 py-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg font-sans text-sm text-gray-700 dark:text-gray-300 shadow-lg">
-            <span className="font-medium">{userName}</span>
+          <div className="px-4 py-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg font-sans text-sm text-gray-700 dark:text-gray-300 shadow-lg">
+            <div className="font-medium text-base mb-1">{userName}</div>
+            {userNodeDescription && (
+              <div className="text-xs opacity-70 mb-3">{userNodeDescription}</div>
+            )}
+            {/* Node Stats */}
+            <div className="space-y-0.5 text-xs border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+              {(() => {
+                const visibleNodes = simulatedNodes.filter(n => {
+                  const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances, n.is_global_service)
+                  return vis.opacity > 0 && vis.isVisible
+                }).length
+                const outOfSight = nodes.length - visibleNodes
+
+                return (
+                  <>
+                    <div>Nodes (total): <span className="font-medium">{nodes.length}</span></div>
+                    <div>Nodes (visible): <span className="font-medium">{visibleNodes}</span></div>
+                    <div>Nodes (out of sight): <span className="font-medium">{outOfSight}</span></div>
+                  </>
+                )
+              })()}
+            </div>
           </div>
         )}
 
@@ -735,56 +758,6 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
           </button>
         )}
         </div>
-      </div>
-
-      {/* Graph stats */}
-      <div
-        className="absolute top-20 left-4 z-10 font-sans text-sm space-y-2"
-        style={{ color: accentColor }}
-      >
-        {/* Node counts by visibility */}
-        <div className="space-y-1">
-          <div>NODES (TOTAL): {nodes.length}</div>
-          <div>
-            NODES (CLOSE): {
-              simulatedNodes.filter(n => {
-                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances, n.is_global_service)
-                return vis.opacity >= 0.5 && vis.isVisible
-              }).length
-            }
-          </div>
-          <div>
-            NODES (FAR): {
-              simulatedNodes.filter(n => {
-                const vis = getNodeVisibility(n.id, centeredNodeId, hopDistances, n.is_global_service)
-                return vis.opacity < 0.5 && vis.isVisible
-              }).length
-            }
-          </div>
-        </div>
-
-        {/* Centered node info */}
-        {centeredNodeId ? (
-          <div
-            className="mt-2 p-2 border rounded"
-            style={{ borderColor: accentColor, backgroundColor }}
-          >
-            <div className="font-bold">CENTERED:</div>
-            <div>{simulatedNodes.find(n => n.id === centeredNodeId)?.name}</div>
-            {simulatedNodes.find(n => n.id === centeredNodeId)?.description && (
-              <div className="text-xs mt-1 opacity-70">
-                {simulatedNodes.find(n => n.id === centeredNodeId)?.description}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div
-            className="mt-2 p-2 border rounded"
-            style={{ borderColor: accentColor, backgroundColor }}
-          >
-            <div className="text-xs opacity-70">Center (not centered)</div>
-          </div>
-        )}
       </div>
 
       {/* 3D Canvas */}
