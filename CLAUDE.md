@@ -53,6 +53,9 @@ be-part-of-net/
 │   ├── Node3D.tsx                  # 3D node spheres (person/app/mcp types)
 │   ├── Edge3D.tsx                  # 3D edge lines
 │   ├── SaturnRing.tsx              # Animated rings around centered node
+│   ├── InspectPanel.tsx            # Node details panel with connections inspector
+│   ├── AddConnectionModal.tsx      # Create new nodes + connections
+│   ├── HondiusInterface.tsx        # Custom UI for Hondius MCP service
 │   └── ForceSimulation.ts          # Physics simulation hook
 ├── lib/
 │   ├── contexts/ThemeContext.tsx   # Theme provider (light/dark mode)
@@ -213,6 +216,163 @@ be-part-of-net/
 - Toggle between login/signup modes
 - Terminal-styled form inputs (green borders)
 - **Usage:** `/root` route only (legacy)
+
+### InspectPanel.tsx
+- Slide-in panel from right side showing node details
+- Displays: name, type, description, URL, endpoint_url
+- Shows ownership status ("you" indicator)
+- **Connections Inspector:** Lists incoming and outgoing edges
+  - Outgoing: `→ Target Node Name (count)`
+  - Incoming: `← Source Node Name (count)`
+  - Helps debug graph structure
+- Action buttons (for nodes you control):
+  - "+ Add Connection" (opens AddConnectionModal)
+  - "Delete Node" (app/mcp only, not person nodes)
+- Close on Escape key or outside click
+
+### AddConnectionModal.tsx
+- Modal form for creating new nodes and connections
+- Radio selection: App or MCP type
+- Form fields:
+  - Name (required)
+  - Description (optional)
+  - URL (optional)
+  - Endpoint URL (MCP only, optional)
+  - Relationship label (optional, private to creator)
+- Creates node + edge atomically
+- Admin feature: Creates connection from selected node (not just from user's node)
+
+### HondiusInterface.tsx
+- Custom interface for Hondius MCP service
+- Full-screen overlay with dedicated UI
+- **Purpose:** Showcase specialized MCP capabilities
+- **Features:**
+  - MCP service description and capabilities
+  - Endpoint URL display
+  - "Connect to This Service" button
+  - Shows "✓ Connected" when edge exists to user's node
+  - Close with X button or Escape key
+- **Integration with graph:** See "MCP Service Integration" section below
+
+## MCP Service Integration: Hondius
+
+### Overview
+**Hondius** is the first integrated MCP (Model Context Protocol) service in the be-part-of.net network. It demonstrates how external AI services can be represented as first-class nodes in the network with custom interaction interfaces.
+
+### Architecture
+
+#### Database Representation
+Hondius is stored as a node in the `nodes` table with special flags:
+- `type`: `'mcp'`
+- `name`: `'Hondius'` (or full name with description)
+- `is_global_service`: `true` (special flag for platform-wide services)
+- `endpoint_url`: MCP endpoint for AI agent integration
+- `url`: Link to Hondius web interface (e.g., https://hondius.cotoaga.ai)
+- `controlled_by`: Empty array (not owned by any user)
+
+#### Global Service Behavior
+Nodes with `is_global_service: true` have special properties:
+1. **Always visible** in fog-of-war (bypass hop distance limits)
+2. **Custom click handler** (opens HondiusInterface instead of InspectPanel)
+3. **Platform-wide availability** (visible to all users regardless of connections)
+
+### GraphVisualization Integration
+
+#### State Management
+```typescript
+const [isHondiusOpen, setIsHondiusOpen] = useState(false)
+const [hondiusNodeId, setHondiusNodeId] = useState<string | null>(null)
+const [isConnectedToHondius, setIsConnectedToHondius] = useState(false)
+```
+
+#### Click Detection
+In Node3D click handler:
+```typescript
+// Check if this is Hondius (global service MCP)
+if (node.is_global_service && node.type === 'mcp' && node.name.includes('Hondius')) {
+  console.log('Global service MCP clicked, opening interface:', node.name)
+  setHondiusNodeId(node.id)
+  setIsHondiusOpen(true)
+  return // Skip normal inspect panel
+}
+```
+
+#### Connection Management
+Users can connect to Hondius by clicking "Connect to This Service" in the HondiusInterface:
+```typescript
+const handleConnectToHondius = async () => {
+  if (!userNodeId || !hondiusNodeId) return
+
+  // Create edge from user to Hondius
+  await fetch('/api/edges', {
+    method: 'POST',
+    body: JSON.stringify({
+      from_node_id: userNodeId,
+      to_node_id: hondiusNodeId,
+      label: null
+    })
+  })
+
+  // Update graph state
+  setIsConnectedToHondius(true)
+  setEdges(prev => [...prev, { source: userNodeId, target: hondiusNodeId }])
+}
+```
+
+#### Connection Status Check
+On load and after connection changes, check if user is already connected:
+```typescript
+useEffect(() => {
+  if (userNodeId && hondiusNodeId) {
+    const connected = edges.some(
+      e => (e.source === userNodeId && e.target === hondiusNodeId) ||
+           (e.source === hondiusNodeId && e.target === userNodeId)
+    )
+    setIsConnectedToHondius(connected)
+  }
+}, [edges, userNodeId, hondiusNodeId])
+```
+
+### Fog-of-War Exemption
+In `lib/fogOfWar.ts`, global services bypass distance calculations:
+```typescript
+export function getNodeVisibility(
+  nodeId: string,
+  centeredNodeId: string | null,
+  hopDistances: HopDistanceMap,
+  isGlobalService?: boolean
+): NodeVisibility {
+  // Global services always visible
+  if (isGlobalService) {
+    return { isVisible: true, opacity: 1.0, isClickable: true }
+  }
+  // ... normal hop distance logic
+}
+```
+
+### UI/UX Flow
+
+1. **Discovery:** User sees Hondius node in graph (purple MCP sphere)
+2. **Click:** Opens HondiusInterface (not InspectPanel)
+3. **Learn:** User reads about Hondius capabilities
+4. **Connect:** User clicks "Connect to This Service"
+5. **Integration:** Edge created, Hondius now part of user's network
+6. **Visibility:** Hondius remains visible regardless of fog-of-war
+
+### Future MCP Services
+This architecture is designed to be extensible for additional MCP services:
+- Create node with `is_global_service: true`
+- Add custom interface component (e.g., `NewServiceInterface.tsx`)
+- Update click detection in GraphVisualization
+- Each service can have unique UI/capabilities
+
+### Current Status
+- ✅ Hondius node exists in production database
+- ✅ HondiusInterface component fully functional
+- ✅ Connection management working
+- ✅ Fog-of-war exemption implemented
+- ✅ Graph integration complete
+- ⚠️ Web interface URL may need updating (verify at https://hondius.cotoaga.ai)
 
 ## Authentication Flow
 
