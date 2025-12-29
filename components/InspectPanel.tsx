@@ -23,8 +23,8 @@ interface InspectPanelProps {
   onConnect?: () => void
   onDeleteNode?: (nodeId: string) => void
   connections?: {
-    outgoing: Array<{ id: string; name: string }>
-    incoming: Array<{ id: string; name: string }>
+    outgoing: Array<{ id: string; name: string; label?: string; isOwn?: boolean }>
+    incoming: Array<{ id: string; name: string; label?: string; isOwn?: boolean }>
   }
 }
 
@@ -177,7 +177,17 @@ export default function InspectPanel({
                         key={conn.id}
                         className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded"
                       >
-                        → {conn.name}
+                        <div className="flex items-start gap-2">
+                          <span className="shrink-0">→</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">{conn.name}</div>
+                            {conn.label && conn.isOwn && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 italic">
+                                &quot;{conn.label}&quot;
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -196,7 +206,17 @@ export default function InspectPanel({
                         key={conn.id}
                         className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded"
                       >
-                        ← {conn.name}
+                        <div className="flex items-start gap-2">
+                          <span className="shrink-0">←</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">{conn.name}</div>
+                            {conn.label && conn.isOwn && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 italic">
+                                &quot;{conn.label}&quot;
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>

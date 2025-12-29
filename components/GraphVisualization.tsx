@@ -93,7 +93,13 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
   }
 
   const [nodes, setNodes] = useState<SimulationNode[]>([])
-  const [edges, setEdges] = useState<{ source: string; target: string }[]>([])
+  const [edges, setEdges] = useState<{
+    id?: string;
+    source: string;
+    target: string;
+    label?: string;
+    created_by?: string;
+  }[]>([])
   const [centeredNodeId, setCenteredNodeId] = useState<string | null>(null)
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const [hopDistances, setHopDistances] = useState<HopDistanceMap>({})
@@ -226,7 +232,7 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       // Fetch edges (filter by is_demo if in demo mode)
       const edgesQuery = supabase
         .from('edges')
-        .select('from_node_id, to_node_id')
+        .select('id, from_node_id, to_node_id, label, created_by')
 
       if (activeDemoMode) {
         edgesQuery.eq('is_demo', true)
@@ -273,8 +279,11 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
       })) || []
 
       const graphEdges = edgesData?.map((edge) => ({
+        id: edge.id,
         source: edge.from_node_id,
         target: edge.to_node_id,
+        label: edge.label,
+        created_by: edge.created_by,
       })) || []
 
       // Store full node data for inspect panel
@@ -374,7 +383,13 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         console.log('[Connect Mode] Edge created:', edgeData)
 
         // Add edge to local state
-        setEdges(prev => [...prev, { source: connectSourceNodeId, target: nodeId }])
+        setEdges(prev => [...prev, {
+          id: edgeData.edge.id,
+          source: connectSourceNodeId,
+          target: nodeId,
+          label: label || undefined,
+          created_by: edgeData.edge.created_by
+        }])
 
         // Exit connect mode
         handleExitConnectMode()
@@ -531,6 +546,9 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         throw new Error(error.error || 'Failed to create edge')
       }
 
+      const edgeData = await edgeResponse.json()
+      const newEdge = edgeData.edge
+
       // Step 3: Update local state with new node and edge
       const newSimNode: SimulationNode = {
         id: newNode.id,
@@ -556,7 +574,13 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
             : n
         ).concat(newSimNode)
       })
-      setEdges(prev => [...prev, { source: sourceNodeId, target: newNode.id }])
+      setEdges(prev => [...prev, {
+        id: newEdge.id,
+        source: sourceNodeId,
+        target: newNode.id,
+        label: newEdge.label,
+        created_by: newEdge.created_by
+      }])
 
       // Add to full nodes data map
       setFullNodesData(prev => {
@@ -971,13 +995,23 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
                   .filter(e => e.source === selectedNodeId)
                   .map(e => {
                     const targetNode = simulatedNodes.find(n => n.id === e.target)
-                    return { id: e.target, name: targetNode?.name || 'Unknown' }
+                    return {
+                      id: e.target,
+                      name: targetNode?.name || 'Unknown',
+                      label: e.label || undefined,
+                      isOwn: e.created_by === currentUserId
+                    }
                   }),
                 incoming: edges
                   .filter(e => e.target === selectedNodeId)
                   .map(e => {
                     const sourceNode = simulatedNodes.find(n => n.id === e.source)
-                    return { id: e.source, name: sourceNode?.name || 'Unknown' }
+                    return {
+                      id: e.source,
+                      name: sourceNode?.name || 'Unknown',
+                      label: e.label || undefined,
+                      isOwn: e.created_by === currentUserId
+                    }
                   })
               }
             : undefined
