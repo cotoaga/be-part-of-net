@@ -1,19 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import CivilizedLayout from '@/components/CivilizedLayout'
-import ThemeToggle from '@/components/ThemeToggle'
-
-// Import GraphVisualization dynamically
-const GraphVisualization = dynamic(() => import('@/components/GraphVisualization'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full text-soft-gray">
-      <p className="text-lg font-sans">Loading Zaphod&apos;s Zoo...</p>
-    </div>
-  ),
-})
 
 export default function PublicLanding() {
   return (
@@ -96,34 +84,6 @@ export default function PublicLanding() {
       {/* Divider */}
       <div className="max-w-4xl mx-auto border-t border-gray-300 dark:border-gray-700 my-8"></div>
 
-      {/* 3D Graph Visualization - Zaphod's Zoo Demo */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
-        <div className="relative h-[500px] md:h-[600px] border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-900">
-          <GraphVisualization isDemoMode={true} />
-
-          {/* Top-right controls: Theme Toggle + Sign In */}
-          <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
-            <ThemeToggle />
-            <Link
-              href="/login"
-              className="px-6 py-2 bg-klein-bottle-green dark:bg-deep-space-blue text-white rounded-lg hover:opacity-90 transition font-sans font-semibold shadow-lg"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-
-        {/* Graph hint */}
-        <div className="text-center mt-4">
-          <p className="font-sans text-soft-gray dark:text-gray-400 text-sm">
-            Click nodes to explore • Fog of war hides distant connections
-          </p>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="max-w-4xl mx-auto border-t border-gray-300 dark:border-gray-700 my-8"></div>
-
       {/* Explore Section */}
       <section className="max-w-4xl mx-auto px-8 py-12">
         <h2 className="text-3xl md:text-4xl font-display font-bold text-gray-900 dark:text-white mb-8">
@@ -132,18 +92,17 @@ export default function PublicLanding() {
 
         <div className="space-y-6">
           {/* Zaphod's Network CTA */}
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 hover:border-klein-bottle-green dark:hover:border-deep-space-blue transition-colors">
-            <h3 className="text-xl font-sans font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-              <span className="text-klein-bottle-green dark:text-deep-space-blue">→</span>
-              Zaphod&apos;s Network
-            </h3>
-            <p className="font-sans text-gray-700 dark:text-gray-300">
-              Wander through a demo. Hitchhiker&apos;s Guide fans, you know the crew.
-            </p>
-            <p className="font-sans text-soft-gray dark:text-gray-400 text-sm mt-2 italic">
-              (Scroll up to explore the graph above)
-            </p>
-          </div>
+          <Link href="/login">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 hover:border-klein-bottle-green dark:hover:border-deep-space-blue transition-colors cursor-pointer">
+              <h3 className="text-xl font-sans font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <span className="text-klein-bottle-green dark:text-deep-space-blue">→</span>
+                Zaphod&apos;s Network
+              </h3>
+              <p className="font-sans text-gray-700 dark:text-gray-300">
+                Wander through a demo. Hitchhiker&apos;s Guide fans, you know the crew.
+              </p>
+            </div>
+          </Link>
 
           {/* Your Network CTA */}
           <Link href="/login">

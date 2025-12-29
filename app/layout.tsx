@@ -3,8 +3,8 @@ import './globals.css'
 import { inter, spaceGrotesk, jetbrainsMono } from '@/lib/fonts'
 
 export const metadata: Metadata = {
-  title: 'Node Zero Control Center',
-  description: 'Administrative interface for the consciousness network',
+  title: 'be-part-of.net',
+  description: 'The anti-social social network',
   icons: {
     icon: '/icon.svg',
     shortcut: '/favicon.ico',
