@@ -469,6 +469,12 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
     // Otherwise, create from user's node
     const sourceNodeId = isAdmin && selectedNodeId ? selectedNodeId : userNodeId
 
+    console.log('[DEBUG] handleCreateConnection called')
+    console.log('[DEBUG] isAdmin:', isAdmin)
+    console.log('[DEBUG] selectedNodeId:', selectedNodeId)
+    console.log('[DEBUG] userNodeId:', userNodeId)
+    console.log('[DEBUG] sourceNodeId (final):', sourceNodeId)
+
     if (!sourceNodeId) {
       throw new Error('Source node not found')
     }
@@ -883,9 +889,28 @@ export default function GraphVisualization({ data, isDemoMode = false, onSignOut
         }
         currentUserId={currentUserId}
         onAddConnection={() => {
+          console.log('[DEBUG] Opening Add Connection modal. Selected node:', selectedNodeId)
           setIsAddConnectionOpen(true)
         }}
         onDeleteNode={handleDeleteNode}
+        connections={
+          selectedNodeId
+            ? {
+                outgoing: edges
+                  .filter(e => e.source === selectedNodeId)
+                  .map(e => {
+                    const targetNode = simulatedNodes.find(n => n.id === e.target)
+                    return { id: e.target, name: targetNode?.name || 'Unknown' }
+                  }),
+                incoming: edges
+                  .filter(e => e.target === selectedNodeId)
+                  .map(e => {
+                    const sourceNode = simulatedNodes.find(n => n.id === e.source)
+                    return { id: e.source, name: sourceNode?.name || 'Unknown' }
+                  })
+              }
+            : undefined
+        }
       />
 
       {/* Add Connection Modal (Phase 2) */}

@@ -19,6 +19,10 @@ interface InspectPanelProps {
   currentUserId: string | null
   onAddConnection?: () => void
   onDeleteNode?: (nodeId: string) => void
+  connections?: {
+    outgoing: Array<{ id: string; name: string }>
+    incoming: Array<{ id: string; name: string }>
+  }
 }
 
 export default function InspectPanel({
@@ -27,7 +31,8 @@ export default function InspectPanel({
   node,
   currentUserId,
   onAddConnection,
-  onDeleteNode
+  onDeleteNode,
+  connections
 }: InspectPanelProps) {
   // Handle escape key
   useEffect(() => {
@@ -144,6 +149,53 @@ export default function InspectPanel({
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
                 This person has been invited but hasn&apos;t claimed their node yet.
               </p>
+            </div>
+          )}
+
+          {/* Connections Inspector */}
+          {connections && (connections.outgoing.length > 0 || connections.incoming.length > 0) && (
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+                Connections
+              </h3>
+
+              {/* Outgoing connections */}
+              {connections.outgoing.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-2 uppercase tracking-wider">
+                    Outgoing ({connections.outgoing.length})
+                  </p>
+                  <div className="space-y-1">
+                    {connections.outgoing.map((conn) => (
+                      <div
+                        key={conn.id}
+                        className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded"
+                      >
+                        → {conn.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Incoming connections */}
+              {connections.incoming.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-2 uppercase tracking-wider">
+                    Incoming ({connections.incoming.length})
+                  </p>
+                  <div className="space-y-1">
+                    {connections.incoming.map((conn) => (
+                      <div
+                        key={conn.id}
+                        className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded"
+                      >
+                        ← {conn.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
