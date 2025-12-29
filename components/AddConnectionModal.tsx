@@ -9,11 +9,12 @@ interface AddConnectionModalProps {
 }
 
 export interface ConnectionFormData {
-  type: 'app' | 'mcp'
+  type: 'person' | 'app'
   name: string
+  email?: string // Person-specific
   description: string
   url: string
-  endpoint_url: string
+  endpoint_url?: string // App-specific (MCP indicator)
   label: string
 }
 
@@ -26,8 +27,9 @@ export default function AddConnectionModal({
   const [error, setError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState<ConnectionFormData>({
-    type: 'app',
+    type: 'person',
     name: '',
+    email: '',
     description: '',
     url: '',
     endpoint_url: '',
@@ -38,8 +40,9 @@ export default function AddConnectionModal({
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        type: 'app',
+        type: 'person',
         name: '',
+        email: '',
         description: '',
         url: '',
         endpoint_url: '',
@@ -98,7 +101,7 @@ export default function AddConnectionModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Space_Grotesk']">
-            Connect to...
+            Create Node
           </h2>
           <button
             onClick={onClose}
@@ -122,16 +125,33 @@ export default function AddConnectionModal({
           {/* Type selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              What are you connecting to?
+              Node Type
             </label>
             <div className="flex gap-4">
               <label className="flex-1 cursor-pointer">
                 <input
                   type="radio"
                   name="type"
+                  value="person"
+                  checked={formData.type === 'person'}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'person' | 'app' })}
+                  className="sr-only"
+                />
+                <div className={`px-4 py-3 rounded-lg border-2 text-center transition-colors ${
+                  formData.type === 'person'
+                    ? 'border-[var(--color-klein-bottle-green)] dark:border-[var(--color-deep-space-blue)] bg-green-50 dark:bg-blue-900/20 text-gray-900 dark:text-white'
+                    : 'border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                }`}>
+                  Person
+                </div>
+              </label>
+              <label className="flex-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="type"
                   value="app"
                   checked={formData.type === 'app'}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'app' | 'mcp' })}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'person' | 'app' })}
                   className="sr-only"
                 />
                 <div className={`px-4 py-3 rounded-lg border-2 text-center transition-colors ${
@@ -140,23 +160,6 @@ export default function AddConnectionModal({
                     : 'border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                 }`}>
                   App
-                </div>
-              </label>
-              <label className="flex-1 cursor-pointer">
-                <input
-                  type="radio"
-                  name="type"
-                  value="mcp"
-                  checked={formData.type === 'mcp'}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'app' | 'mcp' })}
-                  className="sr-only"
-                />
-                <div className={`px-4 py-3 rounded-lg border-2 text-center transition-colors ${
-                  formData.type === 'mcp'
-                    ? 'border-[var(--color-klein-bottle-green)] dark:border-[var(--color-deep-space-blue)] bg-green-50 dark:bg-blue-900/20 text-gray-900 dark:text-white'
-                    : 'border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'
-                }`}>
-                  MCP
                 </div>
               </label>
             </div>
@@ -172,84 +175,127 @@ export default function AddConnectionModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent"
-              placeholder="e.g., Hondius"
+              placeholder={formData.type === 'person' ? 'e.g., Alice Smith' : 'e.g., Hondius'}
               required
               disabled={isSubmitting}
             />
           </div>
 
-          {/* Description */}
+          {/* Email (only for Person) */}
+          {formData.type === 'person' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email (optional)
+              </label>
+              <input
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent"
+                placeholder="alice@example.com"
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
+
+          {/* URL (required for App, optional for Person) */}
+          {formData.type === 'app' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                URL *
+              </label>
+              <input
+                type="url"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent"
+                placeholder="https://example.com"
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
+
+          {formData.type === 'person' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                URL (optional)
+              </label>
+              <input
+                type="url"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent"
+                placeholder="https://example.com"
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
+
+          {/* About/Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Description
+              About (optional)
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent"
               rows={3}
-              placeholder="What does this app/service do?"
+              placeholder={formData.type === 'person' ? 'Tell us about this person...' : 'What does this app do?'}
               disabled={isSubmitting}
             />
           </div>
 
-          {/* URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              URL (optional)
-            </label>
-            <input
-              type="url"
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent"
-              placeholder="https://example.com"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Endpoint URL (only for MCP) */}
-          {formData.type === 'mcp' && (
+          {/* MCP Endpoint (only for App) */}
+          {formData.type === 'app' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Endpoint URL (optional)
+                MCP Endpoint (optional)
               </label>
               <input
                 type="text"
-                value={formData.endpoint_url}
+                value={formData.endpoint_url || ''}
                 onChange={(e) => setFormData({ ...formData, endpoint_url: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent font-mono text-sm"
                 placeholder="mcp://example.com/service"
                 disabled={isSubmitting}
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                If this app has an MCP server endpoint
+              </p>
             </div>
           )}
 
           {/* Relationship label */}
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Your relationship to this:
+              What&apos;s your relationship to this node? (optional)
             </label>
             <input
               type="text"
               value={formData.label}
               onChange={(e) => setFormData({ ...formData, label: e.target.value })}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--color-klein-bottle-green)] dark:focus:ring-[var(--color-deep-space-blue)] focus:border-transparent"
-              placeholder='e.g., "created", "use daily"'
+              placeholder={formData.type === 'person' ? 'e.g., "friend", "colleague"' : 'e.g., "created", "use daily"'}
               disabled={isSubmitting}
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              This is private to you
+              This label is private to you
             </p>
           </div>
 
           {/* Submit button */}
           <button
             type="submit"
-            disabled={isSubmitting || !formData.name.trim()}
+            disabled={
+              isSubmitting ||
+              !formData.name.trim() ||
+              (formData.type === 'app' && !formData.url.trim())
+            }
             className="w-full px-6 py-3 bg-[var(--color-klein-bottle-green)] dark:bg-[var(--color-deep-space-blue)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Creating Connection...' : 'Create Connection'}
+            {isSubmitting ? 'Creating Node...' : 'Create Node'}
           </button>
         </form>
       </div>
