@@ -72,8 +72,8 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
       const data = await response.json();
 
       if (data.success) {
-        // Full page refresh to reload server props (userName, userNodeId)
-        router.refresh();
+        // Hard reload to ensure fresh data
+        window.location.reload();
       } else {
         alert('Failed to reset: ' + data.error);
       }
