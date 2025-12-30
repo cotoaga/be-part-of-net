@@ -15,10 +15,14 @@ export async function POST() {
     }
 
     // Delete all existing nodes and edges (cascade will handle edges)
-    await supabase.from('nodes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error: deleteError } = await supabase.from('nodes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (deleteError) {
+      console.error('Delete error:', deleteError);
+      return NextResponse.json({ error: `Delete failed: ${deleteError.message}` }, { status: 500 });
+    }
 
     // Insert Kurt (ROOT - no invited_by)
-    const kurt = await supabase
+    const { data: kurt, error: kurtError } = await supabase
       .from('nodes')
       .insert({
         id: '00000000-0000-0000-0000-000000000001',
@@ -32,13 +36,18 @@ export async function POST() {
       .select()
       .single();
 
+    if (kurtError) {
+      console.error('Kurt insert error:', kurtError);
+      return NextResponse.json({ error: `Failed to create Kurt: ${kurtError.message}` }, { status: 500 });
+    }
+
     // Insert other persons
     const persons = [
-      { id: '00000000-0000-0000-0000-000000000002', name: 'Alice', email: 'alice@example.com', invited_by: kurt.data?.id },
+      { id: '00000000-0000-0000-0000-000000000002', name: 'Alice', email: 'alice@example.com', invited_by: kurt?.id },
       { id: '00000000-0000-0000-0000-000000000003', name: 'Bob', email: 'bob@example.com', invited_by: '00000000-0000-0000-0000-000000000002' },
-      { id: '00000000-0000-0000-0000-000000000004', name: 'Dave', email: 'dave@example.com', invited_by: kurt.data?.id },
+      { id: '00000000-0000-0000-0000-000000000004', name: 'Dave', email: 'dave@example.com', invited_by: kurt?.id },
       { id: '00000000-0000-0000-0000-000000000005', name: 'Carol', email: 'carol@example.com', invited_by: '00000000-0000-0000-0000-000000000004' },
-      { id: '00000000-0000-0000-0000-000000000006', name: 'Eddie', email: 'eddie@example.com', invited_by: kurt.data?.id },
+      { id: '00000000-0000-0000-0000-000000000006', name: 'Eddie', email: 'eddie@example.com', invited_by: kurt?.id },
     ];
 
     await supabase.from('nodes').insert(
