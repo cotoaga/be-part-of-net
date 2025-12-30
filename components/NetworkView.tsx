@@ -72,9 +72,8 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
       const data = await response.json();
 
       if (data.success) {
-        alert('Test data created! Refreshing...');
-        await fetchGraphData();
-        setCenterNodeId(userNodeId);
+        // Full page refresh to reload server props (userName, userNodeId)
+        router.refresh();
       } else {
         alert('Failed to reset: ' + data.error);
       }
