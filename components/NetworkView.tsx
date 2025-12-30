@@ -36,11 +36,14 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
       if (nodesRes.data) {
         setNodes(nodesRes.data);
 
-        // If user doesn't have a node, center on root node (invited_by = null)
-        if (!centerNodeId) {
+        // Always ensure we have a center node
+        // Priority: 1) userNodeId, 2) root node, 3) any node
+        if (!userNodeId) {
           const rootNode = nodesRes.data.find(n => n.invited_by === null);
-          if (rootNode) {
-            setCenterNodeId(rootNode.id);
+          const fallbackNode = rootNode || nodesRes.data[0];
+          if (fallbackNode) {
+            console.log('Setting center to:', fallbackNode.name, fallbackNode.id);
+            setCenterNodeId(fallbackNode.id);
           }
         }
       }
