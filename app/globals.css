@@ -2,117 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* COTOAGA.AI Light Mode */
+  --color-primary: #00A86B;          /* Klein Bottle Green */
+  --color-background: #FAFAFA;       /* Warm Canvas */
+  --color-surface: #FFFFFF;
+  --color-text: #1A1A1A;
+  --color-text-secondary: #6B7280;
+
+  /* Node Colors (both modes) */
+  --color-node-person: #3B82F6;      /* Blue */
+  --color-node-url: #F97316;         /* Orange */
+  --color-node-mcp: #8B5CF6;         /* Purple */
+
+  /* Edge Colors */
+  --color-edge-default: #10B981;     /* Emerald */
+  --color-edge-pending: #6B7280;     /* Gray */
+
+  /* Spacing & Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --spacing-unit: 4px;
+}
+
+.dark {
+  /* COTOAGA.AI Dark Mode */
+  --color-primary: #0088FF;          /* Deep Space Blue */
+  --color-background: #0A0A0A;       /* Midnight Void */
+  --color-surface: #1A1A1A;
+  --color-text: #FAFAFA;
+  --color-text-secondary: #9CA3AF;
+}
+
 @layer base {
-  /* COTOAGA.AI Design System - CSS Variables */
-  :root {
-    /* Primary Colors */
-    --color-klein-bottle-green: #00A86B;
-    --color-deep-space-blue: #0088FF;
-
-    /* Light Mode Colors */
-    --color-warm-canvas: #FAFAFA;
-    --color-soft-gray: #6B7280;
-    --color-graph-bg-light: #FAFAFA;
-    --color-graph-node-light: #00A86B;
-
-    /* Dark Mode Colors */
-    --color-midnight-void: #0A0A0A;
-    --color-graph-bg-dark: #0A0A0A;
-    --color-graph-node-dark: #0088FF;
-
-    /* Terminal Colors (preserved for /root and /node-zero) */
-    --color-terminal-green: #00ff00;
-    --color-terminal-green-dim: #10b981;
-    --color-terminal-bg: #000000;
-
-    /* Font Family Variables */
-    --font-inter: var(--font-inter);
-    --font-space-grotesk: var(--font-space-grotesk);
-    --font-jetbrains-mono: var(--font-jetbrains-mono);
-  }
-
-  html {
-    font-family: ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Menlo, monospace;
+  * {
+    @apply border-gray-200 dark:border-gray-800;
   }
 
   body {
-    @apply bg-terminal-bg text-terminal-green-dim;
+    @apply bg-[var(--color-background)] text-[var(--color-text)] antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
   }
 }
 
 @layer components {
-  .terminal-input {
-    @apply bg-terminal-bg border border-terminal-green text-terminal-green placeholder-terminal-green-dim;
-    @apply px-4 py-2 font-mono focus:outline-none focus:ring-1 focus:ring-terminal-green;
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2;
   }
-  
-  .terminal-button {
-    @apply bg-terminal-bg border border-terminal-green text-terminal-green px-6 py-2 font-mono;
-    @apply hover:bg-terminal-green hover:text-terminal-bg transition-colors cursor-pointer;
+
+  .btn-primary {
+    @apply btn bg-[var(--color-primary)] text-white;
+    @apply hover:opacity-90 active:scale-95;
   }
-  
-  .terminal-link {
-    @apply text-terminal-green underline hover:text-terminal-green-dim cursor-pointer;
+
+  .btn-secondary {
+    @apply btn bg-[var(--color-surface)] text-[var(--color-text)];
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800;
+    @apply border border-gray-300 dark:border-gray-700;
   }
-}
 
-/* Chaos Star Animations */
-.chaos-star-auth {
-  filter: drop-shadow(0 0 10px rgba(0, 255, 0, 0.5));
-  animation: chaosRotate 15s linear infinite;
-  will-change: transform;
-  transform: translateZ(0); /* Force GPU acceleration */
-}
-
-@keyframes chaosRotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* WebKit prefix for Safari */
-@-webkit-keyframes chaosRotate {
-  0% { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
-}
-
-/* Pulse effect for central hub */
-.chaos-star-auth circle:nth-child(2) {
-  animation: chaosPulse 2s ease-in-out infinite;
-}
-
-@keyframes chaosPulse {
-  0%, 100% { 
-    opacity: 0.8;
-    transform-origin: center;
-    transform: scale(1); 
+  .input {
+    @apply w-full px-3 py-2 rounded-lg;
+    @apply bg-[var(--color-surface)] text-[var(--color-text)];
+    @apply border border-gray-300 dark:border-gray-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)];
+    @apply transition-all duration-200;
   }
-  50% { 
-    opacity: 1;
-    transform-origin: center;
-    transform: scale(1.15); 
+
+  .panel {
+    @apply bg-[var(--color-surface)] rounded-lg shadow-lg;
+    @apply border border-gray-200 dark:border-gray-800;
+  }
+
+  .card {
+    @apply panel p-6;
   }
 }
 
-/* Terminal glow effects */
-.terminal-glow {
-  text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
+@layer utilities {
+  .text-primary {
+    color: var(--color-primary);
+  }
+
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+
+  .surface {
+    background-color: var(--color-surface);
+  }
 }
 
-/* Matrix rain adjustments for auth screen */
-.matrix-rain {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 0;
-  opacity: 0.3; /* Dimmer for better readability */
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Hondius Interface slide-in animation */
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out;
+/* Touch targets (mobile) */
+@media (max-width: 768px) {
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
-@keyframes slideIn {
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
   from {
     transform: translateX(100%);
     opacity: 0;
@@ -123,18 +135,25 @@
   }
 }
 
-/* Modal fade-in animation */
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
+@keyframes slideInUp {
   from {
+    transform: translateY(100%);
     opacity: 0;
-    transform: scale(0.95);
   }
   to {
+    transform: translateY(0);
     opacity: 1;
-    transform: scale(1);
   }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.3s ease-out;
 }

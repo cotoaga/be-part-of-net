@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* COTOAGA.AI Design System - CSS Variables */
+  :root {
+    /* Primary Colors */
+    --color-klein-bottle-green: #00A86B;
+    --color-deep-space-blue: #0088FF;
+
+    /* Light Mode Colors */
+    --color-warm-canvas: #FAFAFA;
+    --color-soft-gray: #6B7280;
+    --color-graph-bg-light: #FAFAFA;
+    --color-graph-node-light: #00A86B;
+
+    /* Dark Mode Colors */
+    --color-midnight-void: #0A0A0A;
+    --color-graph-bg-dark: #0A0A0A;
+    --color-graph-node-dark: #0088FF;
+
+    /* Terminal Colors (preserved for /root and /node-zero) */
+    --color-terminal-green: #00ff00;
+    --color-terminal-green-dim: #10b981;
+    --color-terminal-bg: #000000;
+
+    /* Font Family Variables */
+    --font-inter: var(--font-inter);
+    --font-space-grotesk: var(--font-space-grotesk);
+    --font-jetbrains-mono: var(--font-jetbrains-mono);
+  }
+
+  html {
+    font-family: ui-monospace, SFMono-Regular, Monaco, Consolas, Liberation Mono, Menlo, monospace;
+  }
+
+  body {
+    @apply bg-terminal-bg text-terminal-green-dim;
+  }
+}
+
+@layer components {
+  .terminal-input {
+    @apply bg-terminal-bg border border-terminal-green text-terminal-green placeholder-terminal-green-dim;
+    @apply px-4 py-2 font-mono focus:outline-none focus:ring-1 focus:ring-terminal-green;
+  }
+  
+  .terminal-button {
+    @apply bg-terminal-bg border border-terminal-green text-terminal-green px-6 py-2 font-mono;
+    @apply hover:bg-terminal-green hover:text-terminal-bg transition-colors cursor-pointer;
+  }
+  
+  .terminal-link {
+    @apply text-terminal-green underline hover:text-terminal-green-dim cursor-pointer;
+  }
+}
+
+/* Chaos Star Animations */
+.chaos-star-auth {
+  filter: drop-shadow(0 0 10px rgba(0, 255, 0, 0.5));
+  animation: chaosRotate 15s linear infinite;
+  will-change: transform;
+  transform: translateZ(0); /* Force GPU acceleration */
+}
+
+@keyframes chaosRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* WebKit prefix for Safari */
+@-webkit-keyframes chaosRotate {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+/* Pulse effect for central hub */
+.chaos-star-auth circle:nth-child(2) {
+  animation: chaosPulse 2s ease-in-out infinite;
+}
+
+@keyframes chaosPulse {
+  0%, 100% { 
+    opacity: 0.8;
+    transform-origin: center;
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 1;
+    transform-origin: center;
+    transform: scale(1.15); 
+  }
+}
+
+/* Terminal glow effects */
+.terminal-glow {
+  text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
+}
+
+/* Matrix rain adjustments for auth screen */
+.matrix-rain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  opacity: 0.3; /* Dimmer for better readability */
+}
+
+/* Hondius Interface slide-in animation */
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Modal fade-in animation */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

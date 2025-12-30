@@ -1,27 +1,24 @@
-import type { Metadata } from 'next'
-import './globals.css'
-import { inter, spaceGrotesk, jetbrainsMono } from '@/lib/fonts'
+import './globals.css';
+import { ThemeProvider } from '@/lib/contexts/ThemeContext';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'be-part-of.net',
-  description: 'The anti-social social network',
-  icons: {
-    icon: '/icon.svg',
-    shortcut: '/favicon.ico',
-  },
-}
+  title: 'be-part-of.net | The Anti-Social Social Network',
+  description: 'A consciousness network platform that visualizes human and AI relationships as an interactive 3D graph',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
-    >
-      <body className="font-terminal-mono">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
-  )
+  );
 }
