@@ -66,9 +66,7 @@ function CameraController({
 function Scene({ nodes, edges, centerNodeId, onNodeClick }: GraphCanvasProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [shouldAnimateCamera, setShouldAnimateCamera] = useState(false);
-  const prevCenterRef = useRef(centerNodeId)
-
-;
+  const prevCenterRef = useRef(centerNodeId);
 
   useEffect(() => {
     // Only animate when center node actually changes

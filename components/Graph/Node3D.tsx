@@ -41,7 +41,7 @@ export default function Node3D({ node, opacity, isCenter, isRoot, onClick }: Nod
   }
 
   return (
-    <group position={[node.x, node.y, node.z]}>
+    <group position={[node.x, node.y, node.z]} scale={hovered ? 1.2 : 1}>
       <Sphere
         ref={meshRef}
         args={[scale, 16, 16]}
@@ -54,11 +54,11 @@ export default function Node3D({ node, opacity, isCenter, isRoot, onClick }: Nod
           setHovered(true);
           document.body.style.cursor = 'pointer';
         }}
-        onPointerOut={() => {
+        onPointerOut={(e) => {
+          e.stopPropagation();
           setHovered(false);
           document.body.style.cursor = 'auto';
         }}
-        scale={hovered ? 1.2 : 1}
       >
         <meshStandardMaterial
           color={color}
