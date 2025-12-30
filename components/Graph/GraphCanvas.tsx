@@ -17,26 +17,47 @@ interface GraphCanvasProps {
   onNodeClick: (nodeId: string) => void;
 }
 
-function CameraController({ target }: { target: [number, number, number] }) {
+function CameraController({
+  target,
+  shouldAnimate
+}: {
+  target: [number, number, number];
+  shouldAnimate: boolean;
+}) {
   const { camera } = useThree();
-  const targetRef = useRef(new THREE.Vector3(...target));
+  const [isAnimating, setIsAnimating] = useState(false);
+  const targetPos = useRef(new THREE.Vector3(...target));
+  const startPos = useRef(new THREE.Vector3());
+  const progress = useRef(0);
 
   useEffect(() => {
-    targetRef.current.set(...target);
-  }, [target]);
+    if (shouldAnimate) {
+      // Start animation when target changes
+      startPos.current.copy(camera.position);
+      targetPos.current.set(
+        target[0],
+        target[1] + 15, // Higher up to see more of graph
+        target[2] + 25  // Further back to see more nodes
+      );
+      progress.current = 0;
+      setIsAnimating(true);
+    }
+  }, [target, shouldAnimate, camera]);
 
   useFrame(() => {
-    // Smooth camera transition
-    camera.position.lerp(
-      new THREE.Vector3(
-        targetRef.current.x,
-        targetRef.current.y + 5,
-        targetRef.current.z + 10
-      ),
-      0.05
-    );
-    camera.lookAt(targetRef.current);
-    camera.updateProjectionMatrix();
+    if (isAnimating && progress.current < 1) {
+      progress.current += 0.03;
+
+      if (progress.current >= 1) {
+        progress.current = 1;
+        setIsAnimating(false);
+      }
+
+      // Smooth easing
+      const eased = 1 - Math.pow(1 - progress.current, 3);
+      camera.position.lerpVectors(startPos.current, targetPos.current, eased);
+      camera.lookAt(target[0], target[1], target[2]);
+    }
   });
 
   return null;
@@ -44,6 +65,20 @@ function CameraController({ target }: { target: [number, number, number] }) {
 
 function Scene({ nodes, edges, centerNodeId, onNodeClick }: GraphCanvasProps) {
   const [isPaused, setIsPaused] = useState(false);
+  const [shouldAnimateCamera, setShouldAnimateCamera] = useState(false);
+  const prevCenterRef = useRef(centerNodeId)
+
+;
+
+  useEffect(() => {
+    // Only animate when center node actually changes
+    if (centerNodeId !== prevCenterRef.current) {
+      setShouldAnimateCamera(true);
+      prevCenterRef.current = centerNodeId;
+      // Reset animation flag after triggering
+      setTimeout(() => setShouldAnimateCamera(false), 100);
+    }
+  }, [centerNodeId]);
 
   // Transform nodes and edges into graph format with positions
   const graphData = useMemo(() => {
@@ -101,7 +136,7 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick }: GraphCanvasProps) {
 
   return (
     <>
-      <CameraController target={cameraTarget} />
+      <CameraController target={cameraTarget} shouldAnimate={shouldAnimateCamera} />
 
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
@@ -139,7 +174,9 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick }: GraphCanvasProps) {
         dampingFactor={0.05}
         rotateSpeed={0.5}
         zoomSpeed={0.5}
-        target={cameraTarget}
+        enablePan
+        minDistance={5}
+        maxDistance={100}
       />
     </>
   );
