@@ -19,6 +19,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [centerNodeId, setCenterNodeId] = useState<string | null>(userNodeId);
+  const [recenterTrigger, setRecenterTrigger] = useState(0);
 
   useEffect(() => {
     fetchGraphData();
@@ -82,6 +83,10 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
     }
   };
 
+  const handleRecenter = () => {
+    setRecenterTrigger(prev => prev + 1);
+  };
+
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">
       {/* Header */}
@@ -105,6 +110,9 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
         <button onClick={handleReset} className="btn-secondary text-sm">
           Reset Network
         </button>
+        <button onClick={handleRecenter} className="btn-secondary text-sm">
+          Recenter View
+        </button>
         <div className="flex-1" />
         <div className="text-xs text-[var(--color-text-secondary)]">
           {nodes.length} nodes • {edges.length} connections
@@ -125,6 +133,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
             edges={edges}
             centerNodeId={centerNodeId}
             onNodeClick={(nodeId) => setCenterNodeId(nodeId)}
+            recenterTrigger={recenterTrigger}
           />
         )}
       </div>

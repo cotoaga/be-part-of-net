@@ -15,6 +15,7 @@ interface GraphCanvasProps {
   edges: Edge[];
   centerNodeId: string | null;
   onNodeClick: (nodeId: string) => void;
+  recenterTrigger?: number;
 }
 
 function CameraController({
@@ -63,20 +64,25 @@ function CameraController({
   return null;
 }
 
-function Scene({ nodes, edges, centerNodeId, onNodeClick }: GraphCanvasProps) {
+function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: GraphCanvasProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [shouldAnimateCamera, setShouldAnimateCamera] = useState(false);
   const prevCenterRef = useRef(centerNodeId);
+  const prevRecenterRef = useRef(recenterTrigger);
 
   useEffect(() => {
-    // Only animate when center node actually changes
-    if (centerNodeId !== prevCenterRef.current) {
+    // Animate when center node changes OR recenter is triggered
+    const centerChanged = centerNodeId !== prevCenterRef.current;
+    const recenterTriggered = recenterTrigger !== prevRecenterRef.current;
+
+    if (centerChanged || recenterTriggered) {
       setShouldAnimateCamera(true);
       prevCenterRef.current = centerNodeId;
+      prevRecenterRef.current = recenterTrigger;
       // Reset animation flag after triggering
       setTimeout(() => setShouldAnimateCamera(false), 100);
     }
-  }, [centerNodeId]);
+  }, [centerNodeId, recenterTrigger]);
 
   // Transform nodes and edges into graph format with positions
   const graphData = useMemo(() => {
