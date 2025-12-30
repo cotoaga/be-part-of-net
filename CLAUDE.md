@@ -4,24 +4,23 @@ AI Assistant Context Document for be-part-of.net
 
 ## Project Overview
 
-**be-part-of.net** is "the anti-social social network" - a consciousness network platform that visualizes human and AI relationships as an interactive 3D graph. The project features a **dual aesthetic system**:
+**be-part-of.net** is "the anti-social social network" - a consciousness network platform that visualizes human and AI relationships as an interactive 3D graph.
 
-1. **COTOAGA.AI civilized routes** (/, /login, /network) - Modern design with light/dark mode
-2. **Terminal aesthetic legacy routes** (/root, /node-zero) - Cyberpunk/Matrix theme with green-on-black
+**Current Status:** Fresh rebuild completed (December 2025). The project has been simplified to a minimal viable product with a clean slate architecture.
 
 **Production URL:** https://be-part-of-net.vercel.app
 
 ## Tech Stack
 
 - **Framework:** Next.js 14.2 (App Router)
+- **Runtime:** Node.js 22
 - **Language:** TypeScript 5.6
 - **UI Library:** React 18.3
 - **3D Visualization:** React Three Fiber 8.18 + @react-three/drei 9.122 + Three.js 0.180
-- **Styling:** Tailwind CSS 3.4 (dual theme system)
+- **Styling:** Tailwind CSS 3.4 with light/dark mode
 - **Backend/Auth:** Supabase (@supabase/ssr 0.5.1, @supabase/supabase-js 2.45.4)
-- **State Management:** React useState + Context API (ThemeContext)
-- **Data Fetching:** Native fetch in useEffect (no React Query/SWR)
-- **Testing:** Jest 30 + React Testing Library
+- **State Management:** React useState (no complex state management)
+- **Data Fetching:** Native fetch in useEffect
 - **Deployment:** Vercel
 - **Package Manager:** npm
 
@@ -29,349 +28,140 @@ AI Assistant Context Document for be-part-of.net
 
 ```
 be-part-of-net/
+├── archive/                        # Previous version (archived, not deleted)
 ├── app/
 │   ├── api/
 │   │   ├── auth/callback/          # Supabase auth callback
-│   │   ├── consciousness/health/   # Health check endpoint
-│   │   └── test/
-│   │       ├── pan-galactic/       # Test data population (Zaphod's Zoo)
-│   │       └── reset/              # Network reset
-│   ├── page.tsx                    # Landing page (COTOAGA.AI aesthetic)
-│   ├── login/                      # Auth page (COTOAGA.AI aesthetic)
-│   ├── network/                    # User dashboard (COTOAGA.AI aesthetic)
-│   ├── node-zero/                  # Admin control center (Terminal aesthetic)
-│   ├── root/                       # Legacy terminal auth page
-│   ├── matrix-test/                # Matrix rain testing page
+│   │   └── reset/                  # Network reset endpoint
+│   ├── page.tsx                    # Login page
+│   ├── network/                    # User network dashboard
 │   ├── layout.tsx                  # Root layout
-│   └── globals.css                 # Global styles + animations
+│   └── globals.css                 # Global styles
 ├── components/
-│   ├── CivilizedLayout.tsx         # Modern layout wrapper with ThemeProvider
-│   ├── ThemeToggle.tsx             # Light/dark mode toggle button
-│   ├── MatrixRain.tsx              # Canvas-based Matrix background
-│   ├── AuthForm.tsx                # Terminal-styled auth form with Chaos Star
-│   ├── GraphVisualization.tsx      # 3D force-directed graph
-│   ├── Node3D.tsx                  # 3D node spheres (person/app/mcp types)
-│   ├── Edge3D.tsx                  # 3D edge lines
-│   ├── SaturnRing.tsx              # Animated rings around centered node
-│   ├── InspectPanel.tsx            # Node details panel with connections inspector
-│   ├── AddConnectionModal.tsx      # Create new nodes + connections
-│   └── ForceSimulation.ts          # Physics simulation hook
+│   ├── Auth/LoginForm.tsx          # Email/password login form
+│   ├── NetworkView.tsx             # Network dashboard with controls
+│   ├── Graph/
+│   │   ├── GraphCanvas.tsx         # 3D canvas with camera control
+│   │   ├── Node3D.tsx              # 3D node spheres
+│   │   ├── Edge3D.tsx              # 3D edge lines with arrows
+│   └── ui/
+│       └── ThemeToggle.tsx         # Light/dark mode toggle
 ├── lib/
-│   ├── contexts/ThemeContext.tsx   # Theme provider (light/dark mode)
-│   ├── fogOfWar.ts                 # Visibility system (hop-distance based)
-│   ├── fonts.ts                    # Typography definitions
+│   ├── fogOfWar.ts                 # Visibility calculations (hop-distance)
+│   ├── hooks/useForceSimulation.ts # Physics simulation
 │   ├── supabase/
 │   │   ├── client.ts               # Client-side Supabase
 │   │   └── server.ts               # Server-side Supabase
-│   └── types/database.ts           # Database type definitions
 ├── types/
-│   └── graph.ts                    # Graph-specific types
+│   └── index.ts                    # Type definitions
 ├── supabase/
-│   └── migrations/                 # Database migration files (001-007)
-├── migrations/
-│   └── 001_fresh_start_schema.sql  # New schema (users/nodes/edges)
-├── middleware.ts                   # Auth + admin routing logic
-└── public/                         # Static assets
+│   └── migrations/
+│       └── 100_fresh_start_schema.sql  # Simple nodes/edges schema
+├── middleware.ts                   # Auth protection
+└── .nvmrc                          # Node.js 22
 ```
 
 ## Application Routes
 
-### Main Routes
+| Route | Auth | Purpose |
+|-------|------|---------|
+| `/` | Public | Login page with pre-populated test credentials |
+| `/network` | Protected | User's network dashboard with 3D graph |
+| `/api/auth/callback` | Public | Supabase auth callback |
+| `/api/reset` | Protected | Reset network to test data |
 
-| Route | Design | Auth | Purpose |
-|-------|--------|------|---------|
-| `/` | COTOAGA.AI | Public | Landing page with philosophy + demo graph |
-| `/login` | COTOAGA.AI | Public | Primary auth (login/signup) |
-| `/network` | COTOAGA.AI | Protected | User's personal network dashboard |
-| `/node-zero` | Terminal | Admin-only | God-mode control center with test controls |
-| `/root` | Terminal | Public | Legacy terminal auth (preserved for compatibility) |
+### `/` - Login Page
+- Email/password form with pre-populated credentials (kurt@cotoaga.net / !mp3riuMalphA)
+- Sign In / Sign Up toggle
+- Light/dark theme toggle
+- Redirects to `/network` after auth
 
-### Route Details
-
-#### `/` - Landing Page
-- **Status:** Active (COTOAGA.AI aesthetic)
-- **Features:**
-  - Hero section: "The anti-social social network"
-  - Embedded 3D graph demo (Zaphod's Zoo)
-  - Philosophy cards: "What we have" vs "What we don't have"
-  - Theme toggle (light/dark mode)
-  - Sign In button → `/login`
-  - Footer with CC BY-SA 4.0 license
-
-#### `/login` - Authentication
-- **Status:** Active (COTOAGA.AI aesthetic, primary auth page)
-- **Features:**
-  - Clean email/password form
-  - Toggle between Sign In / Sign Up modes
-  - Error/success message handling
-  - Theme toggle
-  - Links to `/root` (terminal alternative)
-- **Post-auth redirect:** `/network` (after email confirmation)
-
-#### `/network` - User Dashboard
-- **Status:** Active (COTOAGA.AI aesthetic)
-- **Auth:** Middleware redirects to `/login` if not authenticated
-- **Features:**
-  - Welcome header with user's `node_name`
-  - 3D graph of user's personal network
-  - Info cards: Total Connections, Network Depth, Temperature (coming soon - show "--")
-  - Philosophy section
-  - Sign Out button
-  - Theme toggle
-
-#### `/node-zero` - Admin Control Center
-- **Status:** Active (Terminal aesthetic)
-- **Auth:** Admin-only (middleware checks `is_admin` field)
-- **Features:**
-  - Matrix rain background
-  - "Pan-Galactic Gargle Blaster" test controls:
-    - MIX DRINK / REFILL GLASS: Populate Zaphod's Zoo (12 nodes + 18 edges)
-    - RESET NETWORK: Delete all data (with confirmation)
-  - 3D graph visualization
-  - Four hardcoded info panels (Active Nodes, System Status, etc.)
-  - Sign Out button
-
-#### `/root` - Terminal Auth (Legacy)
-- **Status:** Preserved for compatibility
-- **Design:** Terminal aesthetic (black/green)
-- **Implementation:** Wrapper rendering `<AuthForm />` with Chaos Star
+### `/network` - Network Dashboard
+- Welcome header with user name
+- 3D force-directed graph visualization
+- Control bar:
+  - Reset Network button (populates test data)
+  - Recenter View button (resets camera to centered node)
+  - Node/edge count display
+- Theme toggle
+- Sign Out button
 
 ## Key Components
 
-### NEW: CivilizedLayout.tsx
-- Wrapper for modern aesthetic routes (/, /login, /network)
-- Provides `<ThemeProvider>` context
-- Applies COTOAGA.AI design variables
-- Terminal routes bypass this component
+### GraphCanvas.tsx
+- Main 3D canvas using React Three Fiber + Three.js
+- **Camera Control:**
+  - Smooth animation to centered node on selection
+  - No snap-back during user interaction
+  - Recenter button triggers camera animation
+  - OrbitControls for manual pan/rotate/zoom
+- **Rendering:**
+  - Fog-of-war visibility (3-hop distance)
+  - Force-directed physics simulation
+  - Type-based node colors
+  - Directional edges with arrow heads
 
-### NEW: ThemeToggle.tsx
-- Light/dark mode toggle button with sun/moon icons
-- Persists choice to localStorage (`cotoaga-theme`)
-- Applies `dark` class to document element for Tailwind
-
-### NEW: SaturnRing.tsx
-- 3D animated Saturn rings around centered node
-- Two concentric rings with different rotation speeds
-- Used in Node3D when node is focused
-- Configurable color and speed
-
-### GraphVisualization.tsx (REFACTORED)
-- 3D force-directed graph using React Three Fiber + Three.js
-- **Database:** Fetches from `nodes` and `edges` tables (NEW schema)
-- **NEW Features:**
-  - Fog-of-war visibility system (hop-distance based)
-  - Theme-aware colors (Klein Bottle Green / Deep Space Blue)
-  - `isDemoMode` prop for Zaphod's Zoo rendering
-  - Enforced traversal (can't click nodes beyond hop 4)
-  - Edit mode toggle (for authenticated users)
-  - Connect mode for creating edges between nodes
-  - Hover tracking for connect mode visual feedback
-  - Status message display during connect mode
-- **Existing Features:**
-  - Temperature + type-based node colors
-  - Node size by connection count
-  - Click to focus → smooth camera animation
-  - Hover labels
-  - PAUSE/RESUME physics simulation
-  - OrbitControls
-
-### Node3D.tsx (REFACTORED)
-- 3D sphere meshes with metallic/emissive materials
-- **NEW Features:**
-  - Node types: `person | app | mcp` (not human|ai)
-  - Type-based coloring: blue (person), orange (app), purple (mcp)
-  - Ghost effect for unconfirmed person nodes (invites)
-  - Saturn ring when centered
-  - Hover callback: Reports hover state to parent (for connect mode)
-- **Existing Features:**
-  - Temperature gradient overlay
-  - Size scales with connection count
-  - Hover effects: scale up, show label, pointer cursor
-  - Selection ring on click
+### Node3D.tsx
+- 3D sphere meshes with @react-three/drei
+- **Node types:** person (blue), url (orange), mcp (purple)
+- **Root node distinction:** Golden color for network origin (invited_by = null)
+- **Golden ring:** Flat ring around root node (scales with node on hover)
+- **Hover effects:** 1.2x scale animation on entire group (node + ring)
+- **Size:** Based on connection count (min 0.3, max 1.0)
+- **Pointer events:** stopPropagation on both over and out handlers
 
 ### Edge3D.tsx
-- Simple Line component from @react-three/drei
-- Terminal green (#10b981) or theme-aware color
-- 40% opacity
-- Connects node positions dynamically
+- Directional edges using Line component from @react-three/drei
+- Arrow head (cone) at midpoint showing direction (from → to)
+- Emerald green color (#10B981)
+- 60% opacity
 
-### ForceSimulation.ts (REFACTORED)
+### useForceSimulation.ts
 - Physics engine using requestAnimationFrame
-- **NEW:** Nodes track bidirectional `edges` array
-- Forces applied:
+- **Forces:**
   - Coulomb repulsion (nodes push apart)
   - Hooke spring attraction (connected nodes pull together)
-  - Centering force (keeps graph from drifting)
-- Configurable parameters: spring length/strength, repulsion, damping
-- Pause/resume capability
+  - Centering force (prevents drift)
+- Updates node x/y/z positions in-place
+- Pause/resume capability (currently not exposed in UI)
 
-### MatrixRain.tsx
-- Client-side canvas animation
-- Multi-colored Unicode characters (binary, Greek, Cyrillic, Japanese)
-- Color-coded by character type
-- Fixed position background with 60% opacity
-- Staggered drop animation at 40ms intervals
-- Font: 16px Noto Sans/DejaVu Sans monospace
-- **Usage:** Terminal routes only (/root, /node-zero)
-
-### AuthForm.tsx
-- Client component with auth state management
-- Embedded Chaos Star SVG (8-pointed arrow star)
-- Toggle between login/signup modes
-- Terminal-styled form inputs (green borders)
-- **Usage:** `/root` route only (legacy)
-
-### InspectPanel.tsx
-- Slide-in panel from right side showing node details
-- Displays: name, type, description, URL, endpoint_url
-- Shows ownership status ("you" indicator)
-- **Connections Inspector:** Lists incoming and outgoing edges
-  - Outgoing: `→ Target Node Name (count)`
-  - Incoming: `← Source Node Name (count)`
-  - Shows edge labels (only for edges created by current user)
-  - Helps debug graph structure
-- Action buttons (conditional rendering):
-  - **"Connect"** (edit mode, non-centered nodes): Enters connect mode
-  - **"+ Add Connection"** (owned nodes): Opens AddConnectionModal
-  - **"Delete Node"** (edit mode, owned app nodes only)
-- Close on Escape key or outside click
-
-### AddConnectionModal.tsx
-- Modal form for creating new nodes and connections
-- Radio selection: Person or App type
-- Form fields:
-  - Name (required)
-  - Email (Person only, optional)
-  - Description (optional)
-  - URL (required for App, optional for Person)
-  - Endpoint URL (App only, optional - for MCP servers)
-  - Relationship label (optional, private to creator)
-- Creates node + edge atomically
-- Admin feature: Creates connection from selected node (not just from user's node)
-
-### ConnectLabelModal.tsx
-- Modal form for labeling new edge connections
-- Displayed after selecting target node in connect mode
-- Shows connection direction: "From: [source] → To: [target]"
-- Single input field for optional label (private to creator)
-- Keyboard shortcuts: ESC to cancel, Enter to submit
-- Validates against self-connections and duplicate edges
-
-## Edit Mode & Connect Mode
-
-### Edit Mode
-- Toggle button visible for authenticated users (non-demo) and admins
-- When active:
-  - "+" button appears to create new nodes
-  - "Connect" button appears in InspectPanel for non-centered nodes
-  - Delete button enabled for owned app nodes
-- Visual indicator: Button highlighted with accent color
-
-### Connect Mode (Edge Creation Flow)
-1. **Enter:** User clicks "Connect" button in InspectPanel
-   - Source node: Currently centered node
-   - InspectPanel closes
-   - Visual state: All nodes fade to 20% opacity
-   - Status message appears: "Select target node (ESC to cancel)"
-   - Cursor changes to crosshair
-
-2. **Hover:** User hovers over potential target nodes
-   - Hovered node jumps to 100% opacity
-   - Visual highlight (scale + glow)
-   - Source node maintains 80% opacity
-
-3. **Select Target:** User clicks a node
-   - Validates: No self-connections, no duplicate edges
-   - Opens ConnectLabelModal
-   - User enters optional label
-   - Edge created with direction: source → target
-
-4. **Exit:** ESC key, outside click, or successful creation
-   - All nodes return to normal opacity
-   - Fog-of-war visibility rules resume
-   - Connect mode state cleared
-
-## Authentication Flow
-
-### Current Flow
-1. **New user visits `/`** → sees landing page with demo
-2. **Click "Sign In"** → `/login` (modern auth page)
-3. **Sign up** → email confirmation required → redirect to `/network`
-4. **Auto node creation:** PostgreSQL trigger creates node on signup
-   - Node name derived from email (e.g., "kurt" from "kurt@cotoaga.net")
-   - Handles conflicts with random suffix (e.g., "kurt-a3f2")
-   - Initial temperature: 10.0 (hot/new)
-5. **Sign in** → redirect to `/network` (or `/node-zero` if admin)
-
-### Middleware Logic
-- **Public routes:** `/`, `/login`, `/root`, `/api/auth/callback`
-- **Protected routes:** `/network` (any authenticated user)
-- **Admin routes:** `/node-zero` (checks `users.is_admin` field)
-- **Redirects:**
-  - Unauthenticated trying to access protected → `/login`
-  - Non-admin trying to access `/node-zero` → `/network`
-  - Authenticated on `/login` → `/network`
+### fogOfWar.ts
+- BFS-based visibility calculation from centered node
+- **Hop distances:**
+  - 0-1: Full opacity (1.0)
+  - 2: 70% opacity (0.7)
+  - 3: 40% opacity (0.4)
+  - 4+: Hidden (0.0)
+- Returns Map<nodeId, {opacity, distance}>
 
 ## Database Schema
 
-### ⚠️ SCHEMA MIGRATION IN PROGRESS
+### Simple Schema (Current)
 
-The project is transitioning from the old "consciousness" schema to a new "users/nodes/edges" schema:
-
-- **Legacy schema:** `consciousness_nodes`, `consciousness_edges`, `consciousness_tags`
-  - Used by: `/node-zero`, test endpoints (/api/test/*)
-  - Location: `supabase/migrations/001-007`
-
-- **New schema:** `users`, `nodes`, `edges`
-  - Used by: GraphVisualization, landing page, `/network` dashboard
-  - Location: `migrations/001_fresh_start_schema.sql`
-
-**Both schemas currently exist in the database.** Full migration pending.
-
-### New Schema (Active for Visualization)
-
-#### users
-```sql
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT NOT NULL,
-  is_admin BOOLEAN DEFAULT FALSE,
-  temperature DECIMAL(4,1) DEFAULT 5.0,
-  last_login TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-**Key points:**
-- Separate from auth.users (custom user metadata)
-- `is_admin` controls access to `/node-zero`
-- Temperature tracked per user (0-10 scale)
+The fresh rebuild uses a minimal two-table schema:
 
 #### nodes
 ```sql
 CREATE TABLE nodes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type TEXT NOT NULL,              -- 'person' | 'app' | 'mcp'
+  type TEXT NOT NULL CHECK (type IN ('person', 'url', 'mcp')),
   name TEXT NOT NULL,
   description TEXT,
-  email TEXT,                      -- Person-specific
-  confirmed BOOLEAN DEFAULT TRUE,  -- FALSE for unconfirmed invites
-  url TEXT,                        -- External website
-  endpoint_url TEXT,               -- MCP endpoint for AI agents
-  controlled_by UUID[] DEFAULT '{}',  -- Array of user IDs (multi-ownership)
-  is_demo BOOLEAN DEFAULT FALSE,   -- Zaphod's Zoo flag
+  email TEXT,                      -- Person only
+  url TEXT,                        -- URL/MCP only
+  invited_by UUID REFERENCES nodes(id) ON DELETE SET NULL,  -- Person only, NULL = root
+  created_by UUID REFERENCES nodes(id) ON DELETE SET NULL,  -- Who added this node
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
-**Key points:**
-- **Node types:** person (human), app (AI app), mcp (MCP server)
-- **controlled_by array:** Multiple users can control one node (personas)
-- **confirmed flag:** Unconfirmed person nodes = pending invites (ghost visual)
-- **is_demo flag:** Separates test data (Zaphod's Zoo) from real users
+**Node types:**
+- `person`: Human users (blue spheres)
+- `url`: Web resources (orange spheres)
+- `mcp`: MCP servers for AI agents (purple spheres)
+
+**Root node:** `invited_by = NULL` marks the network origin (displayed as golden)
 
 #### edges
 ```sql
@@ -379,229 +169,179 @@ CREATE TABLE edges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
   to_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-  label TEXT,                      -- Private relation tag (visible to creator only)
-  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  is_demo BOOLEAN DEFAULT FALSE,   -- Zaphod's Zoo flag
+  relation TEXT NOT NULL CHECK (relation IN ('invited', 'knowing', 'working_with', 'created', 'using')),
+  created_by UUID REFERENCES nodes(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(from_node_id, to_node_id)
+  UNIQUE(from_node_id, to_node_id, relation)
 );
 ```
 
-**Key points:**
-- Directed edges (from → to)
-- **label field:** Private tag visible only to creator (app-layer privacy)
-- **created_by:** Tracks who created the connection
-- Unique constraint prevents duplicate edges
+**Relations:**
+- `invited`: Person invited another person
+- `knowing`: Person knows person
+- `working_with`: Person works with person
+- `created`: Person created URL/MCP
+- `using`: Person uses URL/MCP
 
-### Database Functions
-
+### Indexes
 ```sql
-get_user_nodes(user_id UUID)           -- Get nodes controlled by user
-get_hop_distance(source_node_id UUID)  -- BFS for fog-of-war visibility (recursive CTE)
-update_updated_at_column()             -- Auto-update timestamp trigger
+CREATE INDEX idx_nodes_type ON nodes(type);
+CREATE INDEX idx_nodes_invited_by ON nodes(invited_by);
+CREATE INDEX idx_nodes_created_by ON nodes(created_by);
+CREATE INDEX idx_edges_from ON edges(from_node_id);
+CREATE INDEX idx_edges_to ON edges(to_node_id);
+CREATE INDEX idx_edges_relation ON edges(relation);
 ```
-
-### Auto Node Creation (Migration 007)
-
-**PostgreSQL Trigger:** `on_auth_user_created`
-- Fires on INSERT to `auth.users`
-- Creates corresponding `consciousness_node` (legacy schema)
-- Node name derived from email prefix
-- Handles naming conflicts with random suffix
-- Sets initial temperature to 10.0
 
 ### Row Level Security (RLS)
 
-**users table:**
-- Users can read/update only their own record
+**Policies:**
+- Anyone can SELECT (read) nodes and edges
+- Authenticated users can INSERT nodes and edges
+- Users can UPDATE/DELETE nodes they created (created_by match)
+- Users can UPDATE/DELETE edges they created (created_by match)
+- Special rule: Can't DELETE person nodes (only created_by can delete url/mcp)
+- Special rule: Can't DELETE edges with relation='invited'
 
-**nodes table:**
-- Anyone can read (discovery)
-- Authenticated users can insert
-- Users can update/delete nodes they control (controlled_by array)
+### Helper Functions
 
-**edges table:**
-- Anyone can read
-- Users can create/update/delete edges they created
+```sql
+-- BFS for fog-of-war visibility (hop distance calculation)
+get_hop_distance(source_node_id UUID) RETURNS TABLE (node_id UUID, hop_distance INT)
 
-### Indexes
-- `idx_nodes_type` - Filter by node type
-- `idx_nodes_controlled_by` - GIN index for array operations
-- `idx_nodes_is_demo` - Separate demo from real data
-- `idx_edges_from_node`, `idx_edges_to_node` - Traversal performance
+-- Auto-update timestamp trigger
+update_updated_at_column()
+```
 
-## API Endpoints
+## Authentication Flow
 
-### Authentication
-- `GET/POST /api/auth/callback` - Supabase OAuth callback (email confirmation)
+1. **New user visits `/`** → sees login page
+2. **Sign in with kurt@cotoaga.net / !mp3riuMalphA** → redirect to `/network`
+3. **User sees their node** (if they have one) or root node as center
+4. **Middleware protects** `/network` route (redirects to `/` if not authenticated)
 
-### Health/Status
-- `GET /api/consciousness/health` - System health check (mostly theatrical JSON response)
+**Note:** No auto-node creation on signup in current version. Nodes must be created via reset endpoint or manual insert.
 
-### Test/Development Endpoints
-⚠️ **These should be admin-only but are currently accessible to any authenticated user:**
+## Test Data
 
-#### `POST /api/test/pan-galactic`
-- **Purpose:** Populate "Zaphod's Zoo" test network
-- **Creates:** 12 Hitchhiker's Guide character nodes + 18 edges
-- **Characters:** Zaphod, Marvin, Ford, Arthur, Trillian, Slartibartfast, Deep Thought, Eddie, Vogon, Fenchurch, Random Dent, Agrajag
-- **Temperature range:** 0.0 (Deep Thought) to 10.0 (Zaphod/Eddie)
-- **Links:** Current user's auth to "Zaphod Beeblebrox" node
-- **Response:** `{ success, message, stats: { nodes_created, edges_created, user_is_now } }`
+### Reset Endpoint (`POST /api/reset`)
+Creates a small test network:
 
-#### `POST /api/test/reset`
-- **Purpose:** Delete all data (edges then nodes, respects FK constraints)
-- **Auth:** Requires authentication
-- **UI:** Confirmation dialog before calling
-- **Response:** `{ success, message }`
+**Nodes (7 total):**
+1. Kurt (person, root) - kurt@cotoaga.net
+2. Alice (person, invited by Kurt)
+3. Bob (person, invited by Alice)
+4. Dave (person, invited by Kurt)
+5. Carol (person, invited by Dave)
+6. Eddie (person, invited by Kurt)
+7. Bob's Website (url, created by Bob)
 
-### Missing Endpoints (Not Yet Built)
-- ❌ `POST /api/nodes` - Create new node
-- ❌ `PUT /api/nodes/:id` - Update node
-- ❌ `DELETE /api/nodes/:id` - Delete individual node
-- ❌ `POST /api/edges` - Create connection
-- ❌ `POST /api/invitations` - Send invitation
-- ❌ `GET /api/network/stats` - Real statistics for info cards
+**Edges (7 total):**
+- Kurt → Alice (invited)
+- Kurt → Dave (invited)
+- Kurt → Eddie (invited)
+- Alice → Bob (invited)
+- Dave → Carol (invited)
+- Bob → Bob's Website (created)
+- Bob → Carol (knowing)
 
 ## Design System
 
-### COTOAGA.AI Aesthetic (Modern Routes)
+### COTOAGA.AI Aesthetic
 
-#### Color Palette
+**Color Palette:**
 ```css
 /* Light Mode */
---color-klein-bottle-green: #00A86B;    /* Primary accent */
---color-warm-canvas: #FAFAFA;           /* Background */
+--color-primary: #00A86B;          /* Klein Bottle Green */
+--color-background: #FAFAFA;       /* Warm Canvas */
+--color-node-person: #3B82F6;      /* Blue */
+--color-node-url: #F97316;         /* Orange */
+--color-node-mcp: #8B5CF6;         /* Purple */
+--color-node-root: #FFD700;        /* Gold */
 
 /* Dark Mode */
---color-deep-space-blue: #0088FF;       /* Primary accent */
---color-midnight-void: #0A0A0A;         /* Background */
-
-/* Universal */
---color-soft-gray: #6B7280;             /* Text secondary */
+--color-primary: #0088FF;          /* Deep Space Blue */
+--color-background: #0A0A0A;       /* Midnight Void */
 ```
 
-#### Typography
-- **Body:** Inter (sans-serif)
-- **Display:** Space Grotesk (modern display)
-- **Terminal:** JetBrains Mono (monospace for code)
+**Typography:**
+- Body: Inter (sans-serif)
+- Display: Space Grotesk
+- Monospace: JetBrains Mono
 
-#### Components
-- Rounded corners (6px typically)
-- Subtle shadows
-- Smooth transitions (200-300ms)
-- Focus rings with accent colors
-- Theme-aware via Tailwind `dark:` prefix
+**Theme:**
+- Toggle between light/dark mode
+- Persists to localStorage (`cotoaga-theme`)
+- Applies `dark` class to document element
+- All routes use same aesthetic (no terminal routes in fresh rebuild)
 
-### Terminal Aesthetic (Legacy Routes)
+## Recent Changes (December 2025)
 
-#### Color Palette
-```css
---color-terminal-green: #00ff00;        /* Main text */
---color-terminal-green-dim: #10b981;    /* Secondary */
---color-terminal-bg: #000000;           /* Background */
-```
+### Fresh Rebuild Completed
+- ✅ Archived old codebase to `/archive` folder
+- ✅ Upgraded to Node.js 22
+- ✅ Fresh database schema (nodes/edges only)
+- ✅ Simplified authentication (email/password)
+- ✅ 3D graph with React Three Fiber
+- ✅ Fog-of-war visibility system
+- ✅ Force-directed physics simulation
 
-#### Design Principles
-- Sharp corners (no border-radius)
-- Green/black only (no other colors)
-- Monospace fonts exclusively
-- Hover effects: invert colors (green bg, black text)
-- Matrix rain background
+### Graph UX Improvements
+- ✅ **Camera animation:** Smooth transition to centered node (only on node selection, no snap-back)
+- ✅ **Hover fixes:** Added stopPropagation to prevent event conflicts
+- ✅ **Golden ring fix:** Moved scale to group level so ring scales with node on hover
+- ✅ **Recenter button:** Triggers camera animation back to centered node
+- ✅ **OrbitControls:** User can freely pan/rotate/zoom without interference
 
-#### Custom Classes
-- `.terminal-input` - Form inputs with green border
-- `.terminal-button` - Buttons with hover invert effect
-- `.terminal-link` - Underlined green links
-- `.chaos-star-auth` - 15s rotating Chaos Star
-- `.matrix-rain` - Fixed position canvas overlay
+## Current State: What's Built
 
-#### Animations
-- `chaosRotate` - 360° rotation over 15s
-- `chaosPulse` - 2s scaling pulse on Chaos Star center
+### ✅ Fully Implemented
+- Supabase email/password authentication
+- Middleware-based route protection
+- Light/dark theme toggle
+- 3D force-directed graph visualization
+- Fog-of-war visibility (3-hop distance)
+- Type-based node coloring (person/url/mcp)
+- Root node distinction (golden color + ring)
+- Node sizing based on connection count
+- Directional edges with arrow heads
+- Interactive camera controls (click to focus, orbit, zoom, recenter)
+- Physics simulation (spring + repulsion forces)
+- Test data reset endpoint
+- Hover effects with proper scaling
 
-### Tailwind Configuration
-- **Dark mode:** Class-based (`dark:` prefix)
-- **Applied via:** ThemeProvider context on document element
-- **Persistence:** localStorage (`cotoaga-theme`)
-- **Default:** Light mode
+### ❌ Not Yet Implemented
+- Auto-node creation on signup
+- User profile editing
+- Node creation UI (must use reset endpoint)
+- Edge creation UI (must use reset endpoint)
+- Node deletion UI
+- Search/filter nodes
+- Real-time updates (Supabase subscriptions)
+- Network statistics (connection count, depth, etc.)
+- Invitation system
+- Admin controls
+- Mobile optimization
+- Loading states
+- Error boundaries
 
-## NEW Features (Since October 2025)
+## Known Issues & Technical Debt
 
-### 1. Fog-of-War Visibility System
-**File:** `lib/fogOfWar.ts`
+### Minor Issues
+1. **No user node association:** Logged-in user doesn't have an associated node (no auto-creation trigger)
+2. **Hard-coded test credentials:** Pre-populated in login form for development
+3. **Client-side data fetching:** NetworkView uses useEffect instead of server components
+4. **No loading states:** Graph appears suddenly when data loads
+5. **Random initial positions:** Nodes start at random positions every render (should persist)
 
-Hop-distance-based rendering with 5 visibility levels:
-- **Hop 0 (Centered):** Full opacity, Saturn ring, clickable
-- **Hop 1:** Full opacity, labels visible, clickable
-- **Hop 2-3:** Reduced opacity (0.75-0.5), labels visible, clickable
-- **Hop 4:** Very faint (0.15), no labels, **NOT clickable** (enforced traversal)
-- **Hop 5+:** Invisible (0.0)
-
-**Enforced traversal:** Users must click closer nodes to "move" toward distant nodes. Prevents long-range jumps across network.
-
-**Implementation:** Client-side BFS calculation (database has `get_hop_distance()` function but not used yet).
-
-### 2. Theme Context Provider
-**File:** `lib/contexts/ThemeContext.tsx`
-
-- Light/dark mode toggle across entire app (COTOAGA.AI routes only)
-- localStorage persistence (`cotoaga-theme` key)
-- Applies `dark` class to document for Tailwind CSS
-- Default: light mode
-
-### 3. Saturn Ring Animation
-**File:** `components/SaturnRing.tsx`
-
-- Animated rotating rings around centered node
-- Visual emphasis for focused exploration
-- Two concentric rings with different opacity/rotation
-- Configurable color and rotation speed
-
-### 4. Auto Node Creation on Signup
-**Migration:** `supabase/migrations/007_auto_create_user_nodes.sql`
-
-- PostgreSQL trigger automatically creates node when user signs up
-- Node name derived from email (e.g., "kurt" from "kurt@cotoaga.net")
-- Handles conflicts with random suffix (e.g., "kurt-a3f2")
-- Sets initial temperature to 10.0 (hot/new)
-
-### 5. Admin System
-- `users.is_admin` field controls access to `/node-zero`
-- Middleware enforces admin-only routes
-- Non-admins redirected to `/network`
-
-### 6. Node Types: person, app, mcp
-**Old:** `human | ai`
-**New:** `person | app | mcp`
-
-- **person:** Human users (blue)
-- **app:** AI applications (orange)
-- **mcp:** MCP servers (purple)
-
-Type-based coloring in 3D visualization with temperature overlay.
-
-### 7. Unconfirmed Person Nodes
-- Person nodes can have `confirmed = FALSE`
-- Represents invited but not-yet-claimed nodes
-- Ghost effect visual (very faint opacity)
-- Privacy model for invitations
-
-### 8. Controlled-By Array
-- Node ownership via `controlled_by: UUID[]` array
-- Multiple users can control single node (personas/shared accounts)
-- RLS policies check array membership
-
-### 9. Demo Data Flag
-- `nodes.is_demo` and `edges.is_demo` flags
-- Separates Zaphod's Zoo from real user data
-- GraphVisualization filters by `isDemoMode` prop
-
-### 10. Private Edge Labels
-- Each edge has `label` field (private to creator)
-- `created_by` field tracks creator
-- Application-layer privacy (visible only to creator)
+### Future Improvements
+- Add user node association (link auth.users to nodes table)
+- Server-side data fetching with React Server Components
+- Skeleton loaders for graph
+- Persist node positions in database or localStorage
+- Add error boundaries around 3D canvas
+- Optimize for mobile (touch controls, smaller viewport)
+- Add real-time subscriptions for collaborative editing
 
 ## Environment Variables
 
@@ -609,11 +349,6 @@ Required in `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
-
-Production (Vercel):
-```env
-NEXT_PUBLIC_CONSCIOUSNESS_NETWORK=be-part-of.net
 ```
 
 ## Development
@@ -625,234 +360,28 @@ npm run build                    # Production build
 npm run start                    # Start production server
 npm run lint                     # ESLint check
 npm run type-check               # TypeScript check
-npm run test                     # Run Jest tests
-npm run test:watch               # Jest watch mode
-npm run test:ci                  # CI tests with coverage
-npm run consciousness:verify     # Full check (type + lint + test)
-npm run reality:sync             # Supabase db push && reset
-npm run vercel-build             # Vercel build (type-check + lint + build)
 ```
 
 ### Build Process
-Vercel build command: `npm run vercel-build`
-- Runs type-check
-- Runs lint
-- Runs build
-- **Note:** Tests excluded from vercel-build to avoid React act() production errors
-
-## Supabase Configuration
-
-### Dashboard Settings
-1. Enable Email Auth provider
-2. Site URL: `https://be-part-of-net.vercel.app`
-3. Redirect URLs: `https://be-part-of-net.vercel.app/api/auth/callback`
-
-### Auth Helpers
-- Server components: Use `@/lib/supabase/server` with cookies
-- Client components: Use `@/lib/supabase/client`
-- Middleware: Use `@supabase/ssr` with cookie helpers
-
-## Testing
-
-- **Framework:** Jest with jsdom environment
-- **Setup:** `jest-setup.ts` for custom matchers
-- **Config:** `jest.config.js` with TypeScript support
-- **Coverage:** Enabled in CI mode
+- Type-check before build
+- Lint before build
+- Vercel deployment on push to main
 
 ## Deployment
 
-### Vercel Configuration
-- Region: `iad1` (US East)
-- Max duration for consciousness API: 30s
-- Framework detection: Next.js
-- Custom headers for API caching (60s stale-while-revalidate)
-
-### Production Checklist
-1. Environment variables configured in Vercel
-2. Supabase URLs match production domain
-3. Build passes type-check + lint
-4. Matrix rain renders correctly (check canvas performance on terminal routes)
-5. Theme toggle persists across sessions
-
-## Current State: What's Built vs. What's Planned
-
-### ✅ Fully Implemented
-- Supabase authentication (email-based with confirmation)
-- Middleware-based route protection + admin gating
-- **Dual aesthetic system** (COTOAGA.AI + terminal)
-- **Theme toggle** (light/dark mode)
-- 3D force-directed graph visualization
-- **Fog-of-war visibility system** with enforced traversal
-- **Auto node creation** on signup via PostgreSQL trigger
-- Temperature + type-based node coloring
-- Node sizing based on connection count
-- Interactive camera controls (click to focus, orbit, zoom)
-- **Saturn ring animation** on centered node
-- Physics simulation with pause/resume
-- Test data population ("Pan-Galactic" / Zaphod's Zoo)
-- Network reset functionality
-- Matrix rain background (terminal routes)
-- **Admin system** (is_admin field + middleware)
-- **Edit mode** with toggle button (for authenticated users)
-- **Node creation UI** - AddConnectionModal creates person/app nodes with edges
-- **Edge creation UI** - Connect mode with visual feedback and label input
-- **Edge labels** - Full UI to add labels via ConnectLabelModal, view in InspectPanel
-- **Node inspection** - InspectPanel shows details, connections, labels
-
-### ⚠️ Partially Implemented
-- **Database schema migration** - Both schemas exist, full migration pending
-- **Info cards** on `/network` - UI exists but shows "--" (queries not implemented)
-- **Unconfirmed nodes** - Visual ghost effect exists but no invite UI
-
-### ❌ Not Yet Implemented
-- **Invitation system** - No invite sending/accepting flow (unconfirmed person nodes exist but no flow)
-- **Real-time updates** - No Supabase subscriptions (must refresh)
-- **Profile editing** - No way to update your own node after creation
-- **Search/filter** - No way to search nodes or filter by type/temperature
-- **Node removal** - No delete button for individual nodes (only full reset)
-- **Admin-gating for test endpoints** - `/api/test/*` accessible to all authenticated users
-- **Real statistics** - Info cards on `/network` need database queries
-- **Server-side graph data** - Currently client-side useEffect fetching
-
-### 🔌 Integration Pattern for External Apps
-To add an external app (like KHAOS-Researcher):
-1. **Current method:** Direct database insert (no UI)
-2. **Future method:** Will need `POST /api/nodes` endpoint + UI form
-3. **Fields needed:** `name`, `type='app'`, `url`, `endpoint_url` (MCP), `temperature`, `controlled_by` array
-
-## Known Issues & Technical Debt
-
-### Critical Issues
-
-1. **Schema Migration Incomplete**
-   - Both `consciousness_nodes` and `nodes` tables exist
-   - `/node-zero` and test endpoints use old schema
-   - GraphVisualization uses new schema
-   - Need to complete migration and remove legacy tables
-
-2. **Test Endpoints Not Admin-Gated**
-   - `/api/test/pan-galactic` and `/api/test/reset` accessible to any authenticated user
-   - Should check `is_admin` field
-
-3. **Info Cards Not Populated**
-   - `/network` page shows "--" for all stats
-   - Need real database queries for connections, depth, temperature
-
-### Design/UX Issues
-
-1. **Terminal Routes Don't Have Theme Toggle**
-   - `/root` and `/node-zero` stuck in terminal aesthetic
-   - No consistency with modern routes
-
-2. **Hardcoded Demo Node ID**
-   - GraphVisualization uses `'a1111111-1111-1111-1111-111111111111'` as demo center
-   - Not guaranteed to match actual Zaphod node ID
-
-3. **Empty Network for Single User**
-   - New user sees only themselves on `/network`
-   - No sample connections or onboarding
-
-4. **No Profile Editing**
-   - Auto-created node on signup, then locked
-   - User can't update node_name, description, etc.
-
-### Technical Debt
-
-1. **Two Migration Systems**
-   - `supabase/migrations/` vs `migrations/`
-   - Unclear which runs on production
-
-2. **localStorage Theme Not SSR-Safe**
-   - Theme persists client-side only
-   - Could cause hydration mismatch
-
-3. **Client-Side Visibility Calculation**
-   - BFS hop distance calculated in browser
-   - Database has `get_hop_distance()` function not used
-   - Inefficient for large graphs (>1000 nodes)
-
-4. **Data Fetching Pattern**
-   - Dashboard is client component with useEffect
-   - Not optimal for Next.js App Router (should use server components)
-   - No React Query or SWR for caching
-
-5. **No Error Boundaries**
-   - 3D canvas can crash and take down entire page
-   - Need error boundaries for graceful fallback
-
-6. **No Loading States**
-   - Graph appears suddenly when data loads
-   - Need skeleton loaders
-
-## Design Philosophy
-
-This project embraces a **dual aesthetic**:
-
-### COTOAGA.AI Routes (Modern)
-1. **Accessibility:** Light/dark mode, readable fonts, clear hierarchy
-2. **Minimalism:** Clean interface, focus on content
-3. **Professionalism:** Suitable for general audiences
-4. **Customization:** User-controlled theme
-
-### Terminal Routes (Legacy)
-1. **Minimalism:** Black backgrounds, green text, no decoration
-2. **Functionality:** Every element serves the "control center" narrative
-3. **Immersion:** Matrix rain and Chaos Star reinforce mystical/technical theme
-4. **High contrast:** Accessibility through stark green/black
-
-## Future Considerations
-
-### High Priority (Core Functionality Gaps)
-- **Complete schema migration** - Remove legacy consciousness tables
-- **Node creation UI** - Form to add person/app/mcp nodes
-- **Edge creation UI** - Manual connection interface
-- **Invitation system** - Send/accept invites with unconfirmed nodes
-- **Node detail modal** - Full profile view on click
-- **Profile editing** - Update your own node info
-- **Real statistics** - Query actual data for info cards
-- **Admin-gate test endpoints** - Check is_admin before allowing reset/populate
-
-### Medium Priority (UX Improvements)
-- **Real-time updates** - Supabase subscriptions for live graph
-- **Search/filter** - Find nodes by name, type, temperature
-- **Tag interface** - UI to add/view private edge labels
-- **Node removal** - Individual delete (not just full reset)
-- **Server-side data fetching** - Use Next.js server components
-- **Error boundaries** - Graceful fallback for 3D canvas crashes
-- **Loading states** - Skeleton loaders for graph data
-
-### Low Priority (Polish)
-- Additional Matrix effects (glitch text, scanlines) on terminal routes
-- Export/import graph data (JSON format)
-- Graph layout presets (circular, hierarchical, force-atlas)
-- Internationalization support
-- Keyboard shortcuts for graph navigation
-- Node/edge animation presets
-
-### Technical Improvements
-- Migrate to server-side graph rendering (RSC)
-- Add React Query or SWR for better data management
-- Use database `get_hop_distance()` function instead of client-side BFS
-- Implement pagination for large graphs (>1000 nodes)
-- Add WebGL performance optimizations
-- Set up proper monitoring (Sentry, LogRocket)
+- **Platform:** Vercel
+- **Region:** US East (iad1)
+- **Auto-deploy:** Push to main branch
+- **Environment:** Production variables configured in Vercel dashboard
 
 ---
 
-**Last Updated:** 2025-12-29
-**Project Version:** 0.1.0
+**Last Updated:** 2025-12-30
+**Version:** 0.1.0 (Fresh Rebuild)
 **Maintained by:** kydroon
 
 **Recent Commits:**
-- `a7507713` - feat(inspector): display edge labels in connections list
-- `890ca4ff` - feat(connect-mode): implement edge creation with opacity effects
-- `c925db8d` - feat(connect-mode): add Connect button and connect mode foundation
-- `f0a221b9` - feat(graph): update node creation to include email field
-- `6cc7a0ba` - feat(modal): refactor AddConnectionModal for Person/App types
-
-**Recent Changes (2025-12-29):**
-- Replaced `prompt()` with proper ConnectLabelModal for edge label input
-- Enhanced connect mode with hover highlight effects (opacity jumps to 100% on hover)
-- Added status message display during connect mode ("Select target node (ESC to cancel)")
-- Improved validation: prevents self-connections and duplicate edges
-- Fixed dynamic route configuration for `/api/me/node`
+- `eb763c36` - feat(graph): add recenter view button
+- `ecaa6c52` - fix(graph): fix hover issues and golden ring displacement
+- `a797276e` - fix(graph): remove camera snap-back, only animate on node selection
+- `511eb441` - fix(api): mark /api/me/node as dynamic route (cleanup old routes)
