@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('kurt@cotoaga.de');
+  const [email, setEmail] = useState('kurt@cotoaga.net');
   const [password, setPassword] = useState('!mp3riuMalphA');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
