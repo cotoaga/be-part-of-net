@@ -99,7 +99,8 @@ WITH RECURSIVE node_hops AS (
   -- Base case: source node is hop 0
   SELECT
     source_node_id as node_id,
-    0 as hop_distance
+    0 as hop_distance,
+    ARRAY[source_node_id] as visited_nodes
 
   UNION
 
@@ -109,17 +110,18 @@ WITH RECURSIVE node_hops AS (
       WHEN e.from_node_id = nh.node_id THEN e.to_node_id
       ELSE e.from_node_id
     END as node_id,
-    nh.hop_distance + 1 as hop_distance
+    nh.hop_distance + 1 as hop_distance,
+    nh.visited_nodes || CASE
+      WHEN e.from_node_id = nh.node_id THEN e.to_node_id
+      ELSE e.from_node_id
+    END as visited_nodes
   FROM node_hops nh
   JOIN edges e ON e.from_node_id = nh.node_id OR e.to_node_id = nh.node_id
   WHERE nh.hop_distance < 4  -- Limit to 4 hops
-  AND NOT EXISTS (
-    SELECT 1 FROM node_hops nh2
-    WHERE nh2.node_id = CASE
+  AND NOT (CASE
       WHEN e.from_node_id = nh.node_id THEN e.to_node_id
       ELSE e.from_node_id
-    END
-  )
+    END = ANY(nh.visited_nodes))
 )
 SELECT DISTINCT node_id, MIN(hop_distance) as hop_distance
 FROM node_hops
