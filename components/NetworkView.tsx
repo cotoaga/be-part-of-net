@@ -33,7 +33,17 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
         supabase.from('edges').select('*'),
       ]);
 
-      if (nodesRes.data) setNodes(nodesRes.data);
+      if (nodesRes.data) {
+        setNodes(nodesRes.data);
+
+        // If user doesn't have a node, center on root node (invited_by = null)
+        if (!centerNodeId) {
+          const rootNode = nodesRes.data.find(n => n.invited_by === null);
+          if (rootNode) {
+            setCenterNodeId(rootNode.id);
+          }
+        }
+      }
       if (edgesRes.data) setEdges(edgesRes.data);
     } catch (error) {
       console.error('Failed to fetch graph data:', error);
