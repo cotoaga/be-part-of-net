@@ -1,0 +1,14 @@
+# Archive folder from previous version
+archive/
+
+# Development files
+*.log
+.env.local
+
+# Tests
+tests/
+coverage/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
