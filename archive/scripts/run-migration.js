@@ -1,51 +1,38 @@
-#!/usr/bin/env node
+// Run a SQL migration file using Supabase client
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config({ path: '.env.local' });
 
-/**
- * Migration runner for be-part-of-net
- * Since Supabase JS client doesn't support raw SQL execution,
- * this script prepares the SQL for manual execution in Supabase SQL Editor
- */
+const { createClient } = require('@supabase/supabase-js');
 
-const fs = require('fs')
-const path = require('path')
+async function runMigration() {
+  const migrationFile = process.argv[2];
 
-const migrationFile = process.argv[2]
+  if (!migrationFile) {
+    console.error('Usage: node scripts/run-migration.js <migration-file>');
+    process.exit(1);
+  }
 
-if (!migrationFile) {
-  console.error('❌ Error: No migration file specified')
-  console.error('Usage: node scripts/run-migration.js <migration-file-path>')
-  process.exit(1)
+  const sql = fs.readFileSync(migrationFile, 'utf8');
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  console.log(`Running migration: ${migrationFile}`);
+
+  // Note: This uses the anon key, so it won't work for DDL changes
+  // For DDL changes, you need to use the service role key or run via supabase CLI
+  const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
+
+  if (error) {
+    console.error('Migration failed:', error);
+    process.exit(1);
+  }
+
+  console.log('Migration completed successfully!');
+  console.log(data);
 }
 
-const migrationPath = path.resolve(migrationFile)
-
-if (!fs.existsSync(migrationPath)) {
-  console.error(`❌ Error: Migration file not found: ${migrationPath}`)
-  process.exit(1)
-}
-
-console.log('📋 Migration Ready:', path.basename(migrationPath))
-console.log('📂 Path:', migrationPath)
-console.log()
-
-const sql = fs.readFileSync(migrationPath, 'utf8')
-
-console.log('🚀 To run this migration:')
-console.log()
-console.log('1. Open Supabase SQL Editor:')
-console.log('   👉 https://supabase.com/dashboard')
-console.log('   👉 Select your project → SQL Editor')
-console.log()
-console.log('2. Copy the SQL below and paste it into a new query:')
-console.log()
-console.log('═'.repeat(80))
-console.log(sql)
-console.log('═'.repeat(80))
-console.log()
-console.log('3. Click "Run" to execute the migration')
-console.log()
-console.log('✅ The migration will:')
-console.log('   • Add is_global_service field to nodes table')
-console.log('   • Create Hondius MCP node')
-console.log('   • Connect Hondius to Kurt\'s node')
-console.log()
+runMigration();
