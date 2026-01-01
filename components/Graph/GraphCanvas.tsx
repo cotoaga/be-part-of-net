@@ -30,10 +30,11 @@ function CameraController({
   const targetPos = useRef(new THREE.Vector3(...target));
   const startPos = useRef(new THREE.Vector3());
   const progress = useRef(0);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (shouldAnimate) {
-      // Start animation when target changes
+    if (shouldAnimate || !hasInitialized.current) {
+      // Start animation when target changes OR on initial mount
       startPos.current.copy(camera.position);
       targetPos.current.set(
         target[0],
@@ -42,20 +43,25 @@ function CameraController({
       );
       progress.current = 0;
       setIsAnimating(true);
+      hasInitialized.current = true;
     }
   }, [target, shouldAnimate, camera]);
 
   useFrame(() => {
     if (isAnimating && progress.current < 1) {
-      progress.current += 0.03;
+      // Slower, smoother fly-to animation
+      progress.current += 0.015;
 
       if (progress.current >= 1) {
         progress.current = 1;
         setIsAnimating(false);
       }
 
-      // Smooth easing
-      const eased = 1 - Math.pow(1 - progress.current, 3);
+      // Smooth ease-in-out (more natural fly-to feeling)
+      const eased = progress.current < 0.5
+        ? 2 * progress.current * progress.current
+        : 1 - Math.pow(-2 * progress.current + 2, 2) / 2;
+
       camera.position.lerpVectors(startPos.current, targetPos.current, eased);
       camera.lookAt(target[0], target[1], target[2]);
     }
@@ -67,8 +73,11 @@ function CameraController({
 function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: GraphCanvasProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [shouldAnimateCamera, setShouldAnimateCamera] = useState(false);
+  const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const prevCenterRef = useRef(centerNodeId);
   const prevRecenterRef = useRef(recenterTrigger);
+  const orbitControlsRef = useRef<any>(null);
+  const { camera, gl } = useThree();
 
   useEffect(() => {
     // Animate when center node changes OR recenter is triggered
@@ -121,8 +130,8 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
     return { nodes: graphNodes, edges: graphEdges };
   }, [nodes, edges]);
 
-  // Run force simulation
-  useForceSimulation(graphData.nodes, graphData.edges, {}, isPaused);
+  // Run force simulation (pause when dragging)
+  useForceSimulation(graphData.nodes, graphData.edges, {}, isPaused || !!draggedNodeId);
 
   // Calculate fog of war
   const visibility = useMemo(() => {
@@ -137,6 +146,42 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
 
   // Find root node (invited_by is null)
   const rootNodeId = nodes.find((n) => n.invited_by === null)?.id;
+
+  // Handle node dragging
+  const handleNodeDragStart = (nodeId: string) => {
+    setDraggedNodeId(nodeId);
+    if (orbitControlsRef.current) {
+      orbitControlsRef.current.enabled = false;
+    }
+  };
+
+  const handleNodeDrag = (nodeId: string, position: [number, number, number]) => {
+    const node = graphData.nodes.find((n) => n.id === nodeId);
+    if (node) {
+      node.x = position[0];
+      node.y = position[1];
+      node.z = position[2];
+      // Reset velocity to prevent physics from immediately moving it
+      node.vx = 0;
+      node.vy = 0;
+      node.vz = 0;
+    }
+  };
+
+  const handleNodeDragEnd = () => {
+    setDraggedNodeId(null);
+    if (orbitControlsRef.current) {
+      orbitControlsRef.current.enabled = true;
+    }
+  };
+
+  // Sync OrbitControls target with camera target
+  useEffect(() => {
+    if (orbitControlsRef.current) {
+      orbitControlsRef.current.target.set(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
+      orbitControlsRef.current.update();
+    }
+  }, [cameraTarget]);
 
   return (
     <>
@@ -169,11 +214,16 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
             isCenter={node.id === centerNodeId}
             isRoot={node.id === rootNodeId}
             onClick={() => onNodeClick(node.id)}
+            onDragStart={handleNodeDragStart}
+            onDrag={handleNodeDrag}
+            onDragEnd={handleNodeDragEnd}
+            isDragged={draggedNodeId === node.id}
           />
         );
       })}
 
       <OrbitControls
+        ref={orbitControlsRef}
         enableDamping
         dampingFactor={0.05}
         rotateSpeed={0.5}

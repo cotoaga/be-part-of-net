@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { Sphere, Html } from '@react-three/drei';
-import type { Mesh } from 'three';
+import { useThree } from '@react-three/fiber';
+import type { Mesh, Vector3 } from 'three';
 import type { GraphNode } from '@/types';
+import * as THREE from 'three';
 
 interface Node3DProps {
   node: GraphNode;
@@ -9,11 +11,29 @@ interface Node3DProps {
   isCenter: boolean;
   isRoot: boolean;
   onClick: () => void;
+  onDragStart: (nodeId: string) => void;
+  onDrag: (nodeId: string, position: [number, number, number]) => void;
+  onDragEnd: () => void;
+  isDragged: boolean;
 }
 
-export default function Node3D({ node, opacity, isCenter, isRoot, onClick }: Node3DProps) {
+export default function Node3D({
+  node,
+  opacity,
+  isCenter,
+  isRoot,
+  onClick,
+  onDragStart,
+  onDrag,
+  onDragEnd,
+  isDragged
+}: Node3DProps) {
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const { camera, size, raycaster } = useThree();
+  const dragPlaneRef = useRef(new THREE.Plane());
+  const dragOffsetRef = useRef(new THREE.Vector3());
+  const isDraggingRef = useRef(false);
 
   // Node size based on connection count (min 0.3, max 1.0)
   const connectionCount = node.edges.length;
@@ -40,24 +60,84 @@ export default function Node3D({ node, opacity, isCenter, isRoot, onClick }: Nod
     color = '#FFD700'; // Gold
   }
 
+  const handlePointerDown = (e: any) => {
+    e.stopPropagation();
+    isDraggingRef.current = true;
+
+    // Calculate drag plane perpendicular to camera
+    const cameraDirection = new THREE.Vector3();
+    camera.getWorldDirection(cameraDirection);
+    dragPlaneRef.current.setFromNormalAndCoplanarPoint(
+      cameraDirection,
+      new THREE.Vector3(node.x, node.y, node.z)
+    );
+
+    // Store offset between pointer and node center
+    const intersection = new THREE.Vector3();
+    raycaster.ray.intersectPlane(dragPlaneRef.current, intersection);
+    if (intersection) {
+      dragOffsetRef.current.set(
+        node.x - intersection.x,
+        node.y - intersection.y,
+        node.z - intersection.z
+      );
+    }
+
+    onDragStart(node.id);
+  };
+
+  const handlePointerMove = (e: any) => {
+    if (!isDraggingRef.current) return;
+    e.stopPropagation();
+
+    // Project pointer position onto drag plane
+    const intersection = new THREE.Vector3();
+    raycaster.ray.intersectPlane(dragPlaneRef.current, intersection);
+
+    if (intersection) {
+      onDrag(node.id, [
+        intersection.x + dragOffsetRef.current.x,
+        intersection.y + dragOffsetRef.current.y,
+        intersection.z + dragOffsetRef.current.z
+      ]);
+    }
+  };
+
+  const handlePointerUp = (e: any) => {
+    if (!isDraggingRef.current) return;
+    e.stopPropagation();
+    isDraggingRef.current = false;
+    onDragEnd();
+  };
+
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    // Only trigger click if we weren't dragging
+    if (!isDraggingRef.current) {
+      onClick();
+    }
+  };
+
   return (
-    <group position={[node.x, node.y, node.z]} scale={hovered ? 1.2 : 1}>
+    <group position={[node.x, node.y, node.z]} scale={(hovered || isDragged) ? 1.2 : 1}>
       <Sphere
         ref={meshRef}
         args={[scale, 16, 16]}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);
-          document.body.style.cursor = 'pointer';
+          document.body.style.cursor = isDragged ? 'grabbing' : 'grab';
         }}
         onPointerOut={(e) => {
           e.stopPropagation();
           setHovered(false);
-          document.body.style.cursor = 'auto';
+          if (!isDraggingRef.current) {
+            document.body.style.cursor = 'auto';
+          }
         }}
       >
         <meshStandardMaterial
