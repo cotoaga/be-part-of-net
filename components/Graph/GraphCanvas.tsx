@@ -142,7 +142,7 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
 
     // Clean up removed nodes from ref
     const nodeIds = new Set(nodes.map(n => n.id));
-    for (const id of graphNodesRef.current.keys()) {
+    for (const id of Array.from(graphNodesRef.current.keys())) {
       if (!nodeIds.has(id)) {
         graphNodesRef.current.delete(id);
       }
