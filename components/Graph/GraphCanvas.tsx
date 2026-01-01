@@ -88,6 +88,10 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
   const orbitControlsRef = useRef<any>(null);
   const { camera, gl } = useThree();
 
+  // Store GraphNode objects persistently across renders to prevent displacement
+  // The force simulation mutates these objects, so we need to reuse them
+  const graphNodesRef = useRef<Map<string, GraphNode>>(new Map());
+
   useEffect(() => {
     // Animate when center node changes OR recenter is triggered
     const centerChanged = centerNodeId !== prevCenterRef.current;
@@ -104,16 +108,45 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
 
   // Transform nodes and edges into graph format with positions
   const graphData = useMemo(() => {
-    const graphNodes: GraphNode[] = nodes.map((node) => ({
-      ...node,
-      x: Math.random() * 20 - 10,
-      y: Math.random() * 20 - 10,
-      z: Math.random() * 20 - 10,
-      vx: 0,
-      vy: 0,
-      vz: 0,
-      edges: [],
-    }));
+    const graphNodes: GraphNode[] = nodes.map((node) => {
+      // Try to get existing GraphNode, or create new one with random position
+      let graphNode = graphNodesRef.current.get(node.id);
+      if (!graphNode) {
+        graphNode = {
+          ...node,
+          x: Math.random() * 20 - 10,
+          y: Math.random() * 20 - 10,
+          z: Math.random() * 20 - 10,
+          vx: 0,
+          vy: 0,
+          vz: 0,
+          edges: [],
+        };
+        graphNodesRef.current.set(node.id, graphNode);
+      } else {
+        // Update node data but preserve position/velocity
+        Object.assign(graphNode, {
+          ...node,
+          x: graphNode.x,
+          y: graphNode.y,
+          z: graphNode.z,
+          vx: graphNode.vx,
+          vy: graphNode.vy,
+          vz: graphNode.vz,
+          edges: [], // Will be repopulated below
+        });
+      }
+
+      return graphNode;
+    });
+
+    // Clean up removed nodes from ref
+    const nodeIds = new Set(nodes.map(n => n.id));
+    for (const id of graphNodesRef.current.keys()) {
+      if (!nodeIds.has(id)) {
+        graphNodesRef.current.delete(id);
+      }
+    }
 
     const nodeMap = new Map(graphNodes.map((n) => [n.id, n]));
 
