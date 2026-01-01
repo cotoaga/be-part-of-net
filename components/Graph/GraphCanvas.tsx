@@ -33,17 +33,26 @@ function CameraController({
   const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (shouldAnimate || !hasInitialized.current) {
-      // Start animation when target changes OR on initial mount
-      startPos.current.copy(camera.position);
-      targetPos.current.set(
+    if (!hasInitialized.current) {
+      // On initial mount, set camera position directly without animation
+      // This prevents displacement while force simulation stabilizes
+      camera.position.set(
         target[0],
         target[1] + 15, // Higher up to see more of graph
         target[2] + 25  // Further back to see more nodes
       );
+      camera.lookAt(target[0], target[1], target[2]);
+      hasInitialized.current = true;
+    } else if (shouldAnimate) {
+      // Animate only when explicitly triggered (node click or recenter)
+      startPos.current.copy(camera.position);
+      targetPos.current.set(
+        target[0],
+        target[1] + 15,
+        target[2] + 25
+      );
       progress.current = 0;
       setIsAnimating(true);
-      hasInitialized.current = true;
     }
   }, [target, shouldAnimate, camera]);
 
