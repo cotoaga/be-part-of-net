@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
@@ -14,15 +15,39 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Delete all existing nodes and edges (cascade will handle edges)
-    const { error: deleteError } = await supabase.from('nodes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (deleteError) {
-      console.error('Delete error:', deleteError);
-      return NextResponse.json({ error: `Delete failed: ${deleteError.message}` }, { status: 500 });
+    // Use admin client to bypass RLS
+    const adminClient = createAdminClient();
+
+    // Delete all edges first (to avoid foreign key constraints)
+    const { error: deleteEdgesError } = await adminClient
+      .from('edges')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Dummy condition to delete all
+
+    if (deleteEdgesError) {
+      console.error('Delete edges error:', deleteEdgesError);
+      return NextResponse.json(
+        { error: `Failed to delete edges: ${deleteEdgesError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Delete all nodes
+    const { error: deleteNodesError } = await adminClient
+      .from('nodes')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Dummy condition to delete all
+
+    if (deleteNodesError) {
+      console.error('Delete nodes error:', deleteNodesError);
+      return NextResponse.json(
+        { error: `Failed to delete nodes: ${deleteNodesError.message}` },
+        { status: 500 }
+      );
     }
 
     // Insert Kurt (ROOT - no invited_by)
-    const { data: kurt, error: kurtError } = await supabase
+    const { data: kurt, error: kurtError } = await adminClient
       .from('nodes')
       .insert({
         id: '00000000-0000-0000-0000-000000000001',
@@ -38,7 +63,10 @@ export async function POST() {
 
     if (kurtError) {
       console.error('Kurt insert error:', kurtError);
-      return NextResponse.json({ error: `Failed to create Kurt: ${kurtError.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `Failed to create Kurt: ${kurtError.message}` },
+        { status: 500 }
+      );
     }
 
     // Insert other persons
@@ -50,7 +78,7 @@ export async function POST() {
       { id: '00000000-0000-0000-0000-000000000006', name: 'Eddie', email: 'eddie@example.com', invited_by: kurt?.id },
     ];
 
-    await supabase.from('nodes').insert(
+    const { error: personsError } = await adminClient.from('nodes').insert(
       persons.map((p) => ({
         ...p,
         type: 'person',
@@ -59,8 +87,16 @@ export async function POST() {
       }))
     );
 
+    if (personsError) {
+      console.error('Persons insert error:', personsError);
+      return NextResponse.json(
+        { error: `Failed to create persons: ${personsError.message}` },
+        { status: 500 }
+      );
+    }
+
     // Insert Bob's Website (URL)
-    await supabase.from('nodes').insert({
+    const { error: websiteError } = await adminClient.from('nodes').insert({
       id: '00000000-0000-0000-0000-000000000007',
       type: 'url',
       name: "Bob's Website",
@@ -68,6 +104,14 @@ export async function POST() {
       description: "Bob's personal website",
       created_by: '00000000-0000-0000-0000-000000000003',
     });
+
+    if (websiteError) {
+      console.error('Website insert error:', websiteError);
+      return NextResponse.json(
+        { error: `Failed to create website: ${websiteError.message}` },
+        { status: 500 }
+      );
+    }
 
     // Insert edges
     const edgeData = [
@@ -80,7 +124,7 @@ export async function POST() {
       { from: '00000000-0000-0000-0000-000000000003', to: '00000000-0000-0000-0000-000000000005', relation: 'knowing' },
     ];
 
-    await supabase.from('edges').insert(
+    const { error: edgesError } = await adminClient.from('edges').insert(
       edgeData.map((e) => ({
         from_node_id: e.from,
         to_node_id: e.to,
@@ -88,6 +132,14 @@ export async function POST() {
         created_by: null,
       }))
     );
+
+    if (edgesError) {
+      console.error('Edges insert error:', edgesError);
+      return NextResponse.json(
+        { error: `Failed to create edges: ${edgesError.message}` },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
