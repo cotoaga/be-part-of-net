@@ -1,5 +1,6 @@
 {
     "root": true,
     "extends": ["next", "next/core-web-vitals"],
-    "rules": {}
+    "rules": {},
+    "ignorePatterns": ["archive/**/*", "node_modules/**/*", ".next/**/*"]
   }
