@@ -313,8 +313,12 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger, onDeb
         onAnimationEnd={handleAnimationEnd}
       />
 
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
+      {/* Enhanced lighting for beautiful sphere rendering */}
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[10, 10, 5]} intensity={0.8} castShadow />
+      <pointLight position={[-10, -10, -5]} intensity={0.4} color="#4080ff" />
+      <pointLight position={[0, 20, 0]} intensity={0.3} color="#ffffff" />
+      <hemisphereLight args={['#ffffff', '#444444', 0.6]} />
 
       {/* Render edges */}
       {graphData.edges.map((edge) => {

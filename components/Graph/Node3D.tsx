@@ -161,7 +161,7 @@ export default function Node3D({
     <group ref={groupRef}>
       <Sphere
         ref={meshRef}
-        args={[scale, 16, 16]}
+        args={[scale, 64, 64]} // High resolution for smooth spheres
         onClick={handleClick}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -182,19 +182,28 @@ export default function Node3D({
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={isCenter ? 0.5 : isRoot ? 0.3 : 0.1}
+          emissiveIntensity={isCenter ? 0.6 : isRoot ? 0.4 : 0.15}
           opacity={opacity}
           transparent
-          metalness={0.5}
-          roughness={0.5}
+          metalness={0.85} // High metalness for reflective look
+          roughness={0.25} // Low roughness for shiny surface
+          envMapIntensity={1.5} // Enhance environment reflections
         />
       </Sphere>
 
-      {/* Root node ring */}
+      {/* Root node ring with improved appearance */}
       {isRoot && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[scale * 1.3, scale * 1.5, 32]} />
-          <meshBasicMaterial color="#FFD700" opacity={opacity * 0.5} transparent />
+          <ringGeometry args={[scale * 1.3, scale * 1.5, 64]} />
+          <meshStandardMaterial
+            color="#FFD700"
+            emissive="#FFD700"
+            emissiveIntensity={0.3}
+            metalness={0.9}
+            roughness={0.2}
+            opacity={opacity * 0.6}
+            transparent
+          />
         </mesh>
       )}
 
