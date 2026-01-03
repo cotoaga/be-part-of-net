@@ -31,18 +31,23 @@ function CameraController({
   const startPos = useRef(new THREE.Vector3());
   const progress = useRef(0);
   const hasInitialized = useRef(false);
+  const frameCount = useRef(0);
 
   useEffect(() => {
     if (!hasInitialized.current) {
-      // On initial mount, set camera position directly without animation
-      // This prevents displacement while force simulation stabilizes
-      camera.position.set(
-        target[0],
-        target[1] + 15, // Higher up to see more of graph
-        target[2] + 25  // Further back to see more nodes
-      );
-      camera.lookAt(target[0], target[1], target[2]);
-      hasInitialized.current = true;
+      // Wait a few frames for force simulation to start stabilizing
+      // This prevents using initial random positions for camera setup
+      const timer = setTimeout(() => {
+        camera.position.set(
+          target[0],
+          target[1] + 15, // Higher up to see more of graph
+          target[2] + 25  // Further back to see more nodes
+        );
+        camera.lookAt(target[0], target[1], target[2]);
+        hasInitialized.current = true;
+      }, 100); // Small delay to let simulation run a few frames
+
+      return () => clearTimeout(timer);
     } else if (shouldAnimate) {
       // Animate only when explicitly triggered (node click or recenter)
       startPos.current.copy(camera.position);
@@ -180,11 +185,13 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
     return calculateFogOfWar(nodes, edges, centerNodeId);
   }, [nodes, edges, centerNodeId]);
 
-  // Find center node for camera
-  const centerNode = graphData.nodes.find((n) => n.id === centerNodeId);
-  const cameraTarget: [number, number, number] = centerNode
-    ? [centerNode.x, centerNode.y, centerNode.z]
-    : [0, 0, 0];
+  // Find center node for camera - memoized to prevent unnecessary OrbitControls updates
+  const cameraTarget: [number, number, number] = useMemo(() => {
+    const centerNode = graphData.nodes.find((n) => n.id === centerNodeId);
+    return centerNode
+      ? [centerNode.x, centerNode.y, centerNode.z]
+      : [0, 0, 0];
+  }, [graphData.nodes, centerNodeId]);
 
   // Find root node (invited_by is null)
   const rootNodeId = nodes.find((n) => n.invited_by === null)?.id;
@@ -217,13 +224,14 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
     }
   };
 
-  // Sync OrbitControls target with camera target
+  // Sync OrbitControls target with camera target only when animating
+  // This prevents interference with user interactions
   useEffect(() => {
-    if (orbitControlsRef.current) {
+    if (orbitControlsRef.current && shouldAnimateCamera) {
       orbitControlsRef.current.target.set(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
       orbitControlsRef.current.update();
     }
-  }, [cameraTarget]);
+  }, [cameraTarget, shouldAnimateCamera]);
 
   return (
     <>
