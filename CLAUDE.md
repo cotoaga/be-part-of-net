@@ -41,13 +41,15 @@ be-part-of-net/
 │   ├── Auth/LoginForm.tsx          # Email/password login form
 │   ├── NetworkView.tsx             # Network dashboard with controls
 │   ├── Graph/
-│   │   ├── GraphCanvas.tsx         # 3D canvas with camera control
-│   │   ├── Node3D.tsx              # 3D node spheres
-│   │   ├── Edge3D.tsx              # 3D edge lines with arrows
+│   │   ├── GraphCanvas.tsx         # 3D canvas with camera state machine
+│   │   ├── Node3D.tsx              # High-res 3D spheres with drag support
+│   │   ├── Edge3D.tsx              # Real-time edge rendering
+│   │   └── DebugOverlay.tsx        # System state visualization
 │   └── ui/
 │       └── ThemeToggle.tsx         # Light/dark mode toggle
 ├── lib/
 │   ├── fogOfWar.ts                 # Visibility calculations (hop-distance)
+│   ├── graphLayout.ts              # Pre-computed stable positions
 │   ├── hooks/useForceSimulation.ts # Physics simulation
 │   ├── supabase/
 │   │   ├── client.ts               # Client-side Supabase
@@ -90,31 +92,75 @@ be-part-of-net/
 
 ### GraphCanvas.tsx
 - Main 3D canvas using React Three Fiber + Three.js
+- **Camera State Machine:**
+  - INITIALIZING: Camera positioning on first mount
+  - ANIMATING: Camera smoothly animating to target (OrbitControls disabled)
+  - USER_CONTROL: User freely controls camera (OrbitControls enabled)
 - **Camera Control:**
   - Smooth animation to centered node on selection
   - No snap-back during user interaction
   - Recenter button triggers camera animation
-  - OrbitControls for manual pan/rotate/zoom
+  - OrbitControls for manual pan/rotate/zoom (only active in USER_CONTROL state)
 - **Rendering:**
+  - Pre-computed stable initial positions (no displacement)
   - Fog-of-war visibility (3-hop distance)
-  - Force-directed physics simulation
+  - Force-directed physics simulation (paused during drag)
   - Type-based node colors
   - Directional edges with arrow heads
+  - Sophisticated PBR lighting (ambient, directional, point, hemisphere)
+- **Debug Mode:**
+  - Real-time system state visualization
+  - Shows camera state, physics state, interaction modes
+  - Displays centered node name and graph statistics
 
 ### Node3D.tsx
-- 3D sphere meshes with @react-three/drei
+- High-resolution 3D sphere meshes (64x64 segments) with @react-three/drei
 - **Node types:** person (blue), url (orange), mcp (purple)
 - **Root node distinction:** Golden color for network origin (invited_by = null)
-- **Golden ring:** Flat ring around root node (scales with node on hover)
+- **Golden ring:** Flat metallic ring around root node (scales with node on hover)
 - **Hover effects:** 1.2x scale animation on entire group (node + ring)
 - **Size:** Based on connection count (min 0.3, max 1.0)
-- **Pointer events:** stopPropagation on both over and out handlers
+- **PBR Materials:** High metalness (0.85), low roughness (0.25), environment reflections
+- **Interactive Drag:**
+  - Click and drag nodes to reposition
+  - Pointer capture ensures smooth dragging
+  - Physics pauses during drag
+  - Visual position updates every frame via useFrame
+- **Pointer events:** stopPropagation on all handlers to prevent conflicts
 
 ### Edge3D.tsx
 - Directional edges using Line component from @react-three/drei
 - Arrow head (cone) at midpoint showing direction (from → to)
 - Emerald green color (#10B981)
 - 60% opacity
+- **Real-time Updates:**
+  - Position and rotation updated every frame via useFrame
+  - Tracks node movements during physics simulation and drag
+  - No memoization (reads mutable node positions directly)
+
+### DebugOverlay.tsx (NEW)
+- Fixed overlay showing system state in real-time
+- **Mode Indicators:**
+  - SPIN/ZOOM: User rotating/zooming camera (green)
+  - DRAG NODE: User dragging a node (purple)
+  - ANIMATING: Camera animating to target (yellow)
+  - INITIALIZING: System starting up (blue)
+- **State Display:**
+  - Camera state (initializing/animating/user_control)
+  - OrbitControls enabled/disabled
+  - Node drag active/inactive
+  - Physics running/paused
+  - Node/edge counts
+  - Centered node name
+- **User Instructions:** Mode descriptions for interaction patterns
+
+### graphLayout.ts (NEW)
+- Pre-computes stable node positions before first render
+- Runs force simulation synchronously (300 iterations)
+- Eliminates visible displacement on startup
+- **Forces:** Same as useForceSimulation (repulsion, spring, centering)
+- Returns Map<nodeId, {x, y, z}> for initial positions
+- Only used on first initialization (new nodes use smaller random range)
 
 ### useForceSimulation.ts
 - Physics engine using requestAnimationFrame
@@ -123,7 +169,7 @@ be-part-of-net/
   - Hooke spring attraction (connected nodes pull together)
   - Centering force (prevents drift)
 - Updates node x/y/z positions in-place
-- Pause/resume capability (currently not exposed in UI)
+- Pause/resume capability (paused during camera animation and node drag)
 
 ### fogOfWar.ts
 - BFS-based visibility calculation from centered node
@@ -275,9 +321,9 @@ Creates a small test network:
 - Applies `dark` class to document element
 - All routes use same aesthetic (no terminal routes in fresh rebuild)
 
-## Recent Changes (December 2025)
+## Recent Changes (January 2026)
 
-### Fresh Rebuild Completed
+### Fresh Rebuild Completed (December 2025)
 - ✅ Archived old codebase to `/archive` folder
 - ✅ Upgraded to Node.js 22
 - ✅ Fresh database schema (nodes/edges only)
@@ -285,6 +331,15 @@ Creates a small test network:
 - ✅ 3D graph with React Three Fiber
 - ✅ Fog-of-war visibility system
 - ✅ Force-directed physics simulation
+
+### Major Graph Refactoring (January 2026)
+- ✅ **Camera State Machine:** Eliminated camera control conflicts with explicit state management (INITIALIZING/ANIMATING/USER_CONTROL)
+- ✅ **Pre-computed Stable Positions:** Added graphLayout.ts to eliminate node displacement on startup (300-iteration pre-simulation)
+- ✅ **Interactive Node Dragging:** Implemented pointer capture for smooth node repositioning with physics pause
+- ✅ **Real-time Edge Updates:** Removed memoization, added useFrame for continuous edge tracking during physics and drag
+- ✅ **Enhanced Rendering:** High-resolution spheres (64x64), PBR materials, sophisticated lighting system
+- ✅ **Debug Overlay:** Real-time system state visualization with mode indicators and graph statistics
+- ✅ **CI/CD Fixes:** Excluded archive folder from Jest test discovery, fixed GitHub Actions warnings
 
 ### Graph UX Improvements
 - ✅ **Camera animation:** Smooth transition to centered node (only on node selection, no snap-back)
@@ -299,14 +354,21 @@ Creates a small test network:
 - Supabase email/password authentication
 - Middleware-based route protection
 - Light/dark theme toggle
-- 3D force-directed graph visualization
+- 3D force-directed graph visualization with pre-computed stable positions
+- Camera state machine (INITIALIZING/ANIMATING/USER_CONTROL)
+- Interactive node dragging with pointer capture
+- Real-time edge tracking during physics and drag
 - Fog-of-war visibility (3-hop distance)
 - Type-based node coloring (person/url/mcp)
-- Root node distinction (golden color + ring)
+- Root node distinction (golden color + metallic ring)
 - Node sizing based on connection count
+- High-resolution node rendering (64x64 segments)
+- PBR materials with metalness and environment reflections
+- Sophisticated lighting system (ambient, directional, point, hemisphere)
 - Directional edges with arrow heads
 - Interactive camera controls (click to focus, orbit, zoom, recenter)
-- Physics simulation (spring + repulsion forces)
+- Physics simulation (spring + repulsion forces, pause during drag)
+- Debug overlay with real-time system state visualization
 - Test data reset endpoint
 - Hover effects with proper scaling
 
@@ -332,16 +394,16 @@ Creates a small test network:
 2. **Hard-coded test credentials:** Pre-populated in login form for development
 3. **Client-side data fetching:** NetworkView uses useEffect instead of server components
 4. **No loading states:** Graph appears suddenly when data loads
-5. **Random initial positions:** Nodes start at random positions every render (should persist)
 
 ### Future Improvements
 - Add user node association (link auth.users to nodes table)
 - Server-side data fetching with React Server Components
 - Skeleton loaders for graph
-- Persist node positions in database or localStorage
+- Persist user-adjusted node positions in database or localStorage
 - Add error boundaries around 3D canvas
 - Optimize for mobile (touch controls, smaller viewport)
 - Add real-time subscriptions for collaborative editing
+- Remove debug overlay for production (or make it toggleable)
 
 ## Environment Variables
 
@@ -376,12 +438,13 @@ npm run type-check               # TypeScript check
 
 ---
 
-**Last Updated:** 2025-12-30
-**Version:** 0.1.0 (Fresh Rebuild)
+**Last Updated:** 2026-01-03
+**Version:** 0.2.0 (Major Graph Refactoring)
 **Maintained by:** kydroon
 
 **Recent Commits:**
-- `eb763c36` - feat(graph): add recenter view button
-- `ecaa6c52` - fix(graph): fix hover issues and golden ring displacement
-- `a797276e` - fix(graph): remove camera snap-back, only animate on node selection
-- `511eb441` - fix(api): mark /api/me/node as dynamic route (cleanup old routes)
+- `df3a6da2` - fix(ci): exclude archive folder from Jest test discovery
+- `ad9b0480` - enhance(graph): beautify nodes with high-res geometry and PBR materials
+- `c41ecd2c` - fix(graph): eliminate initial displacement by setting camera directly on mount
+- `5aaa8bcf` - fix(graph): prevent node displacement on hover by persisting positions
+- `4634a6aa` - fix(graph): use Array.from for Map iterator compatibility
