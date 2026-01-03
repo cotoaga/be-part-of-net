@@ -82,6 +82,11 @@ export default function Node3D({
     e.stopPropagation();
     isDraggingRef.current = true;
 
+    // Capture pointer to ensure we receive all events even if cursor leaves the sphere
+    if (e.target && e.pointerId !== undefined) {
+      e.target.setPointerCapture(e.pointerId);
+    }
+
     // Calculate drag plane perpendicular to camera
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
@@ -131,6 +136,12 @@ export default function Node3D({
   const handlePointerUp = (e: any) => {
     if (!isDraggingRef.current) return;
     e.stopPropagation();
+
+    // Release pointer capture
+    if (e.target && e.pointerId !== undefined) {
+      e.target.releasePointerCapture(e.pointerId);
+    }
+
     isDraggingRef.current = false;
     onDragEnd();
   };
