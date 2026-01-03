@@ -9,6 +9,7 @@ import Edge3D from './Edge3D';
 import { useForceSimulation } from '@/lib/hooks/useForceSimulation';
 import { calculateFogOfWar } from '@/lib/fogOfWar';
 import { computeStableLayout } from '@/lib/graphLayout';
+import DebugOverlay from './DebugOverlay';
 import * as THREE from 'three';
 
 interface GraphCanvasProps {
@@ -17,6 +18,14 @@ interface GraphCanvasProps {
   centerNodeId: string | null;
   onNodeClick: (nodeId: string) => void;
   recenterTrigger?: number;
+  onDebugUpdate?: (info: {
+    cameraState: string;
+    isDragging: boolean;
+    orbitControlsEnabled: boolean;
+    forceSimulationPaused: boolean;
+    nodeCount: number;
+    edgeCount: number;
+  }) => void;
 }
 
 enum CameraState {
@@ -28,12 +37,14 @@ enum CameraState {
 function CameraController({
   target,
   cameraState,
+  recenterTrigger,
   onInitialized,
   onAnimationStart,
   onAnimationEnd
 }: {
   target: [number, number, number];
   cameraState: CameraState;
+  recenterTrigger?: number;
   onInitialized: () => void;
   onAnimationStart: () => void;
   onAnimationEnd: () => void;
@@ -44,6 +55,7 @@ function CameraController({
   const progress = useRef(0);
   const hasInitialized = useRef(false);
   const prevTargetRef = useRef(target);
+  const prevRecenterRef = useRef(recenterTrigger);
 
   // Initialize camera on first mount
   // No delay needed since positions are pre-computed and stable
@@ -60,7 +72,7 @@ function CameraController({
     }
   }, [target, camera, onInitialized]);
 
-  // Trigger animation when target changes
+  // Trigger animation when target changes OR recenter is clicked
   useEffect(() => {
     if (hasInitialized.current && cameraState === CameraState.USER_CONTROL) {
       const targetChanged =
@@ -68,7 +80,10 @@ function CameraController({
         target[1] !== prevTargetRef.current[1] ||
         target[2] !== prevTargetRef.current[2];
 
-      if (targetChanged) {
+      const recenterTriggered = recenterTrigger !== prevRecenterRef.current;
+
+      if (targetChanged || recenterTriggered) {
+        console.log('[CameraController] Starting animation:', targetChanged ? 'target change' : 'recenter');
         startPos.current.copy(camera.position);
         targetPos.current.set(
           target[0],
@@ -77,10 +92,11 @@ function CameraController({
         );
         progress.current = 0;
         prevTargetRef.current = target;
+        prevRecenterRef.current = recenterTrigger;
         onAnimationStart();
       }
     }
-  }, [target, cameraState, camera, onAnimationStart]);
+  }, [target, cameraState, recenterTrigger, camera, onAnimationStart]);
 
   // Animate camera
   useFrame(() => {
@@ -104,7 +120,7 @@ function CameraController({
   return null;
 }
 
-function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: GraphCanvasProps) {
+function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger, onDebugUpdate }: GraphCanvasProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [cameraState, setCameraState] = useState<CameraState>(CameraState.INITIALIZING);
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
@@ -116,6 +132,20 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
   // Store GraphNode objects persistently across renders to prevent displacement
   // The force simulation mutates these objects, so we need to reuse them
   const graphNodesRef = useRef<Map<string, GraphNode>>(new Map());
+
+  // Update debug info whenever state changes
+  useEffect(() => {
+    if (onDebugUpdate) {
+      onDebugUpdate({
+        cameraState,
+        isDragging: !!draggedNodeId,
+        orbitControlsEnabled: cameraState === CameraState.USER_CONTROL && !draggedNodeId,
+        forceSimulationPaused: isPaused || !!draggedNodeId,
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+      });
+    }
+  }, [cameraState, draggedNodeId, isPaused, nodes.length, edges.length, onDebugUpdate]);
 
   // Camera state callbacks
   const handleCameraInitialized = () => {
@@ -133,19 +163,15 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
     setCameraState(CameraState.USER_CONTROL);
   };
 
-  // Trigger animation when center node changes or recenter is clicked
+  // Track center node changes (CameraController will handle animation)
   useEffect(() => {
-    const centerChanged = centerNodeId !== prevCenterRef.current;
-    const recenterTriggered = recenterTrigger !== prevRecenterRef.current;
+    prevCenterRef.current = centerNodeId;
+  }, [centerNodeId]);
 
-    if ((centerChanged || recenterTriggered) && cameraState === CameraState.USER_CONTROL) {
-      console.log('[Camera] Triggering animation for', centerChanged ? 'center change' : 'recenter');
-      prevCenterRef.current = centerNodeId;
-      prevRecenterRef.current = recenterTrigger;
-      // Animation will be triggered by CameraController detecting target change
-      setCameraState(CameraState.ANIMATING);
-    }
-  }, [centerNodeId, recenterTrigger, cameraState]);
+  // Track recenter trigger (CameraController will handle animation)
+  useEffect(() => {
+    prevRecenterRef.current = recenterTrigger;
+  }, [recenterTrigger]);
 
   // Transform nodes and edges into graph format with positions
   const graphData = useMemo(() => {
@@ -281,6 +307,7 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
       <CameraController
         target={cameraTarget}
         cameraState={cameraState}
+        recenterTrigger={recenterTrigger}
         onInitialized={handleCameraInitialized}
         onAnimationStart={handleAnimationStart}
         onAnimationEnd={handleAnimationEnd}
@@ -337,12 +364,33 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
 }
 
 export default function GraphCanvas(props: GraphCanvasProps) {
+  const [debugInfo, setDebugInfo] = useState({
+    cameraState: 'initializing',
+    isDragging: false,
+    orbitControlsEnabled: false,
+    forceSimulationPaused: false,
+    nodeCount: 0,
+    edgeCount: 0,
+  });
+
   return (
-    <Canvas
-      camera={{ position: [0, 5, 10], fov: 75 }}
-      style={{ background: 'var(--color-background)' }}
-    >
-      <Scene {...props} />
-    </Canvas>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <Canvas
+        camera={{ position: [0, 5, 10], fov: 75 }}
+        style={{ background: 'var(--color-background)' }}
+      >
+        <Scene {...props} onDebugUpdate={setDebugInfo} />
+      </Canvas>
+
+      <DebugOverlay
+        cameraState={debugInfo.cameraState}
+        isDragging={debugInfo.isDragging}
+        orbitControlsEnabled={debugInfo.orbitControlsEnabled}
+        forceSimulationPaused={debugInfo.forceSimulationPaused}
+        nodeCount={debugInfo.nodeCount}
+        edgeCount={debugInfo.edgeCount}
+        centerNodeId={props.centerNodeId}
+      />
+    </div>
   );
 }
