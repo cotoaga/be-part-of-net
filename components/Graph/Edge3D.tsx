@@ -1,5 +1,8 @@
+import { useRef } from 'react';
 import { Line } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import type { GraphEdge } from '@/types';
+import type { Mesh } from 'three';
 import * as THREE from 'three';
 
 interface Edge3DProps {
@@ -9,31 +12,46 @@ interface Edge3DProps {
 
 export default function Edge3D({ edge, opacity }: Edge3DProps) {
   const { source, target } = edge;
+  const arrowRef = useRef<Mesh>(null);
+  const lineRef = useRef<any>(null);
 
-  // Compute arrow position at midpoint (removed useMemo - direct computation)
-  const arrowPosition: [number, number, number] = [
-    (source.x + target.x) / 2,
-    (source.y + target.y) / 2,
-    (source.z + target.z) / 2,
-  ];
+  // Update arrow position and rotation every frame to track node movements
+  useFrame(() => {
+    if (arrowRef.current) {
+      // Update arrow position (midpoint)
+      arrowRef.current.position.set(
+        (source.x + target.x) / 2,
+        (source.y + target.y) / 2,
+        (source.z + target.z) / 2
+      );
 
-  // Compute arrow rotation to point toward target (removed useMemo - direct computation)
-  const direction = new THREE.Vector3(
-    target.x - source.x,
-    target.y - source.y,
-    target.z - source.z
-  ).normalize();
+      // Update arrow rotation (point toward target)
+      const direction = new THREE.Vector3(
+        target.x - source.x,
+        target.y - source.y,
+        target.z - source.z
+      ).normalize();
 
-  const quaternion = new THREE.Quaternion();
-  quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+      const quaternion = new THREE.Quaternion();
+      quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
 
-  const euler = new THREE.Euler().setFromQuaternion(quaternion);
-  const arrowRotation: [number, number, number] = [euler.x, euler.y, euler.z];
+      arrowRef.current.quaternion.copy(quaternion);
+    }
+
+    // Update line endpoints
+    if (lineRef.current) {
+      lineRef.current.geometry.setPositions([
+        source.x, source.y, source.z,
+        target.x, target.y, target.z,
+      ]);
+    }
+  });
 
   return (
     <group>
       {/* Main line */}
       <Line
+        ref={lineRef}
         points={[
           [source.x, source.y, source.z],
           [target.x, target.y, target.z],
@@ -45,7 +63,7 @@ export default function Edge3D({ edge, opacity }: Edge3DProps) {
       />
 
       {/* Arrow head */}
-      <mesh position={arrowPosition} rotation={arrowRotation}>
+      <mesh ref={arrowRef}>
         <coneGeometry args={[0.1, 0.2, 8]} />
         <meshBasicMaterial color="#10B981" opacity={opacity * 0.6} transparent />
       </mesh>

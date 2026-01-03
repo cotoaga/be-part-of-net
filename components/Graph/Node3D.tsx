@@ -150,7 +150,10 @@ export default function Node3D({
     e.stopPropagation();
     // Only trigger click if we weren't dragging
     if (!isDraggingRef.current) {
+      console.log('[Node3D] Click detected on node:', node.name, node.id);
       onClick();
+    } else {
+      console.log('[Node3D] Click suppressed - was dragging');
     }
   };
 

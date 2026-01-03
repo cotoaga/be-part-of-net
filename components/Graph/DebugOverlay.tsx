@@ -8,6 +8,7 @@ interface DebugOverlayProps {
   nodeCount: number;
   edgeCount: number;
   centerNodeId: string | null;
+  centerNodeName?: string | null;
 }
 
 export default function DebugOverlay({
@@ -18,6 +19,7 @@ export default function DebugOverlay({
   nodeCount,
   edgeCount,
   centerNodeId,
+  centerNodeName,
 }: DebugOverlayProps) {
   // Determine current mode
   let mode = 'UNKNOWN';
@@ -90,8 +92,10 @@ export default function DebugOverlay({
         </div>
 
         <div className="flex justify-between gap-4">
-          <span className="text-gray-400">Center:</span>
-          <span className="text-xs">{centerNodeId ? centerNodeId.slice(0, 8) : 'None'}</span>
+          <span className="text-gray-400">Centered:</span>
+          <span className="text-xs font-semibold">
+            {centerNodeName || (centerNodeId ? `ID: ${centerNodeId.slice(0, 8)}...` : 'None')}
+          </span>
         </div>
       </div>
 

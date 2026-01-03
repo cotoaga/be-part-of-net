@@ -390,6 +390,7 @@ export default function GraphCanvas(props: GraphCanvasProps) {
         nodeCount={debugInfo.nodeCount}
         edgeCount={debugInfo.edgeCount}
         centerNodeId={props.centerNodeId}
+        centerNodeName={props.nodes.find(n => n.id === props.centerNodeId)?.name}
       />
     </div>
   );
