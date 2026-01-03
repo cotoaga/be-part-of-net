@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Sphere, Html } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import type { Mesh, Vector3 } from 'three';
+import { useThree, useFrame } from '@react-three/fiber';
+import type { Mesh, Vector3, Group } from 'three';
 import type { GraphNode } from '@/types';
 import * as THREE from 'three';
 
@@ -28,6 +28,7 @@ export default function Node3D({
   onDragEnd,
   isDragged
 }: Node3DProps) {
+  const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const { camera, size, raycaster } = useThree();
@@ -59,6 +60,23 @@ export default function Node3D({
   if (isRoot) {
     color = '#FFD700'; // Gold
   }
+
+  // Update position and scale every frame
+  useFrame(() => {
+    if (groupRef.current) {
+      // Update position from force simulation (unless being dragged)
+      if (!isDraggingRef.current) {
+        groupRef.current.position.set(node.x, node.y, node.z);
+      }
+
+      // Smooth scale transition for hover/drag state
+      const targetScale = (hovered || isDragged) ? 1.2 : 1;
+      groupRef.current.scale.lerp(
+        new THREE.Vector3(targetScale, targetScale, targetScale),
+        0.2
+      );
+    }
+  });
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation();
@@ -95,11 +113,18 @@ export default function Node3D({
     raycaster.ray.intersectPlane(dragPlaneRef.current, intersection);
 
     if (intersection) {
-      onDrag(node.id, [
+      const newPos: [number, number, number] = [
         intersection.x + dragOffsetRef.current.x,
         intersection.y + dragOffsetRef.current.y,
         intersection.z + dragOffsetRef.current.z
-      ]);
+      ];
+
+      // Update both the node data and the visual position immediately
+      onDrag(node.id, newPos);
+
+      if (groupRef.current) {
+        groupRef.current.position.set(newPos[0], newPos[1], newPos[2]);
+      }
     }
   };
 
@@ -119,7 +144,7 @@ export default function Node3D({
   };
 
   return (
-    <group position={[node.x, node.y, node.z]} scale={(hovered || isDragged) ? 1.2 : 1}>
+    <group ref={groupRef}>
       <Sphere
         ref={meshRef}
         args={[scale, 16, 16]}
