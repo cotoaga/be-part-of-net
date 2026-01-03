@@ -16,6 +16,11 @@ module.exports = {
     '**/__tests__/**/*.ts?(x)',
     '**/?(*.)+(spec|test).ts?(x)'
   ],
+  testPathIgnorePatterns: [
+    '<rootDir>/.next/',
+    '<rootDir>/node_modules/',
+    '<rootDir>/archive/'
+  ],
   // Important for CI/CD
   coverageDirectory: '<rootDir>/coverage',
   collectCoverageFrom: [
