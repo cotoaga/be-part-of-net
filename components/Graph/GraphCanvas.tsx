@@ -8,6 +8,7 @@ import Node3D from './Node3D';
 import Edge3D from './Edge3D';
 import { useForceSimulation } from '@/lib/hooks/useForceSimulation';
 import { calculateFogOfWar } from '@/lib/fogOfWar';
+import { computeStableLayout } from '@/lib/graphLayout';
 import * as THREE from 'three';
 
 interface GraphCanvasProps {
@@ -18,60 +19,79 @@ interface GraphCanvasProps {
   recenterTrigger?: number;
 }
 
+enum CameraState {
+  INITIALIZING = 'initializing',
+  ANIMATING = 'animating',
+  USER_CONTROL = 'user_control'
+}
+
 function CameraController({
   target,
-  shouldAnimate
+  cameraState,
+  onInitialized,
+  onAnimationStart,
+  onAnimationEnd
 }: {
   target: [number, number, number];
-  shouldAnimate: boolean;
+  cameraState: CameraState;
+  onInitialized: () => void;
+  onAnimationStart: () => void;
+  onAnimationEnd: () => void;
 }) {
   const { camera } = useThree();
-  const [isAnimating, setIsAnimating] = useState(false);
   const targetPos = useRef(new THREE.Vector3(...target));
   const startPos = useRef(new THREE.Vector3());
   const progress = useRef(0);
   const hasInitialized = useRef(false);
-  const frameCount = useRef(0);
+  const prevTargetRef = useRef(target);
 
+  // Initialize camera on first mount
+  // No delay needed since positions are pre-computed and stable
   useEffect(() => {
     if (!hasInitialized.current) {
-      // Wait a few frames for force simulation to start stabilizing
-      // This prevents using initial random positions for camera setup
-      const timer = setTimeout(() => {
-        camera.position.set(
-          target[0],
-          target[1] + 15, // Higher up to see more of graph
-          target[2] + 25  // Further back to see more nodes
-        );
-        camera.lookAt(target[0], target[1], target[2]);
-        hasInitialized.current = true;
-      }, 100); // Small delay to let simulation run a few frames
-
-      return () => clearTimeout(timer);
-    } else if (shouldAnimate) {
-      // Animate only when explicitly triggered (node click or recenter)
-      startPos.current.copy(camera.position);
-      targetPos.current.set(
+      camera.position.set(
         target[0],
         target[1] + 15,
         target[2] + 25
       );
-      progress.current = 0;
-      setIsAnimating(true);
+      camera.lookAt(target[0], target[1], target[2]);
+      hasInitialized.current = true;
+      onInitialized();
     }
-  }, [target, shouldAnimate, camera]);
+  }, [target, camera, onInitialized]);
 
+  // Trigger animation when target changes
+  useEffect(() => {
+    if (hasInitialized.current && cameraState === CameraState.USER_CONTROL) {
+      const targetChanged =
+        target[0] !== prevTargetRef.current[0] ||
+        target[1] !== prevTargetRef.current[1] ||
+        target[2] !== prevTargetRef.current[2];
+
+      if (targetChanged) {
+        startPos.current.copy(camera.position);
+        targetPos.current.set(
+          target[0],
+          target[1] + 15,
+          target[2] + 25
+        );
+        progress.current = 0;
+        prevTargetRef.current = target;
+        onAnimationStart();
+      }
+    }
+  }, [target, cameraState, camera, onAnimationStart]);
+
+  // Animate camera
   useFrame(() => {
-    if (isAnimating && progress.current < 1) {
-      // Slower, smoother fly-to animation
+    if (cameraState === CameraState.ANIMATING && progress.current < 1) {
       progress.current += 0.015;
 
       if (progress.current >= 1) {
         progress.current = 1;
-        setIsAnimating(false);
+        onAnimationEnd();
       }
 
-      // Smooth ease-in-out (more natural fly-to feeling)
       const eased = progress.current < 0.5
         ? 2 * progress.current * progress.current
         : 1 - Math.pow(-2 * progress.current + 2, 2) / 2;
@@ -86,7 +106,7 @@ function CameraController({
 
 function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: GraphCanvasProps) {
   const [isPaused, setIsPaused] = useState(false);
-  const [shouldAnimateCamera, setShouldAnimateCamera] = useState(false);
+  const [cameraState, setCameraState] = useState<CameraState>(CameraState.INITIALIZING);
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const prevCenterRef = useRef(centerNodeId);
   const prevRecenterRef = useRef(recenterTrigger);
@@ -97,31 +117,57 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
   // The force simulation mutates these objects, so we need to reuse them
   const graphNodesRef = useRef<Map<string, GraphNode>>(new Map());
 
+  // Camera state callbacks
+  const handleCameraInitialized = () => {
+    console.log('[Camera] Initialized, enabling user control');
+    setCameraState(CameraState.USER_CONTROL);
+  };
+
+  const handleAnimationStart = () => {
+    console.log('[Camera] Animation started, disabling user control');
+    setCameraState(CameraState.ANIMATING);
+  };
+
+  const handleAnimationEnd = () => {
+    console.log('[Camera] Animation ended, enabling user control');
+    setCameraState(CameraState.USER_CONTROL);
+  };
+
+  // Trigger animation when center node changes or recenter is clicked
   useEffect(() => {
-    // Animate when center node changes OR recenter is triggered
     const centerChanged = centerNodeId !== prevCenterRef.current;
     const recenterTriggered = recenterTrigger !== prevRecenterRef.current;
 
-    if (centerChanged || recenterTriggered) {
-      setShouldAnimateCamera(true);
+    if ((centerChanged || recenterTriggered) && cameraState === CameraState.USER_CONTROL) {
+      console.log('[Camera] Triggering animation for', centerChanged ? 'center change' : 'recenter');
       prevCenterRef.current = centerNodeId;
       prevRecenterRef.current = recenterTrigger;
-      // Reset animation flag after triggering
-      setTimeout(() => setShouldAnimateCamera(false), 100);
+      // Animation will be triggered by CameraController detecting target change
+      setCameraState(CameraState.ANIMATING);
     }
-  }, [centerNodeId, recenterTrigger]);
+  }, [centerNodeId, recenterTrigger, cameraState]);
 
   // Transform nodes and edges into graph format with positions
   const graphData = useMemo(() => {
+    // Pre-compute stable positions on first initialization
+    const stablePositions = graphNodesRef.current.size === 0
+      ? computeStableLayout(nodes, edges)
+      : null;
+
     const graphNodes: GraphNode[] = nodes.map((node) => {
-      // Try to get existing GraphNode, or create new one with random position
+      // Try to get existing GraphNode, or create new one
       let graphNode = graphNodesRef.current.get(node.id);
       if (!graphNode) {
+        // Use pre-computed stable position if available, otherwise use smaller random range
+        const pos = stablePositions?.get(node.id) || {
+          x: Math.random() * 5,
+          y: Math.random() * 5,
+          z: Math.random() * 5,
+        };
+
         graphNode = {
           ...node,
-          x: Math.random() * 20 - 10,
-          y: Math.random() * 20 - 10,
-          z: Math.random() * 20 - 10,
+          ...pos,
           vx: 0,
           vy: 0,
           vz: 0,
@@ -199,9 +245,7 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
   // Handle node dragging
   const handleNodeDragStart = (nodeId: string) => {
     setDraggedNodeId(nodeId);
-    if (orbitControlsRef.current) {
-      orbitControlsRef.current.enabled = false;
-    }
+    // OrbitControls will be disabled automatically by enabled prop based on cameraState
   };
 
   const handleNodeDrag = (nodeId: string, position: [number, number, number]) => {
@@ -219,23 +263,28 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
 
   const handleNodeDragEnd = () => {
     setDraggedNodeId(null);
-    if (orbitControlsRef.current) {
-      orbitControlsRef.current.enabled = true;
-    }
+    // OrbitControls will be re-enabled automatically by enabled prop based on cameraState
   };
 
-  // Sync OrbitControls target with camera target only when animating
-  // This prevents interference with user interactions
+  // Sync OrbitControls target when transitioning to USER_CONTROL
+  // This ensures OrbitControls has correct target after animation completes
   useEffect(() => {
-    if (orbitControlsRef.current && shouldAnimateCamera) {
+    if (orbitControlsRef.current && cameraState === CameraState.USER_CONTROL) {
+      console.log('[OrbitControls] Syncing target to', cameraTarget);
       orbitControlsRef.current.target.set(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
       orbitControlsRef.current.update();
     }
-  }, [cameraTarget, shouldAnimateCamera]);
+  }, [cameraState, cameraTarget]);
 
   return (
     <>
-      <CameraController target={cameraTarget} shouldAnimate={shouldAnimateCamera} />
+      <CameraController
+        target={cameraTarget}
+        cameraState={cameraState}
+        onInitialized={handleCameraInitialized}
+        onAnimationStart={handleAnimationStart}
+        onAnimationEnd={handleAnimationEnd}
+      />
 
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
@@ -274,6 +323,7 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger }: Gra
 
       <OrbitControls
         ref={orbitControlsRef}
+        enabled={cameraState === CameraState.USER_CONTROL && !draggedNodeId}
         enableDamping
         dampingFactor={0.05}
         rotateSpeed={0.5}
