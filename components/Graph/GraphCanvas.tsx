@@ -419,18 +419,19 @@ export default function GraphCanvas(props: GraphCanvasProps) {
         <Scene {...props} onDebugUpdate={setDebugInfo} />
       </Canvas>
 
-      {props.debugVisible && (
-        <DebugOverlay
-          cameraState={debugInfo.cameraState}
-          isDragging={debugInfo.isDragging}
-          orbitControlsEnabled={debugInfo.orbitControlsEnabled}
-          forceSimulationPaused={debugInfo.forceSimulationPaused}
-          nodeCount={debugInfo.nodeCount}
-          edgeCount={debugInfo.edgeCount}
-          centerNodeId={props.centerNodeId}
-          centerNodeName={props.nodes.find(n => n.id === props.centerNodeId)?.name}
-        />
-      )}
+      <DebugOverlay
+        visible={props.debugVisible}
+        cameraState={debugInfo.cameraState}
+        isDragging={debugInfo.isDragging}
+        orbitControlsEnabled={debugInfo.orbitControlsEnabled}
+        forceSimulationPaused={debugInfo.forceSimulationPaused}
+        nodeCount={debugInfo.nodeCount}
+        edgeCount={debugInfo.edgeCount}
+        centerNodeId={props.centerNodeId}
+        centerNodeName={props.nodes.find(n => n.id === props.centerNodeId)?.name}
+        interactionMode={props.interactionMode}
+        selectedNodeName={undefined}
+      />
     </div>
   );
 }

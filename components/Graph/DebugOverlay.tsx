@@ -1,6 +1,9 @@
 'use client';
 
+import { InteractionMode } from '@/types';
+
 interface DebugOverlayProps {
+  visible: boolean;
   cameraState: string;
   isDragging: boolean;
   orbitControlsEnabled: boolean;
@@ -9,9 +12,12 @@ interface DebugOverlayProps {
   edgeCount: number;
   centerNodeId: string | null;
   centerNodeName?: string | null;
+  interactionMode: InteractionMode;
+  selectedNodeName?: string | null;
 }
 
 export default function DebugOverlay({
+  visible,
   cameraState,
   isDragging,
   orbitControlsEnabled,
@@ -20,12 +26,22 @@ export default function DebugOverlay({
   edgeCount,
   centerNodeId,
   centerNodeName,
+  interactionMode,
+  selectedNodeName,
 }: DebugOverlayProps) {
+  if (!visible) return null;
+
   // Determine current mode
   let mode = 'UNKNOWN';
   let modeColor = 'bg-gray-500';
 
-  if (cameraState === 'animating') {
+  if (interactionMode === InteractionMode.CONNECT_SELECT) {
+    mode = 'CONNECT: SELECT SOURCE';
+    modeColor = 'bg-cyan-500';
+  } else if (interactionMode === InteractionMode.CONNECT_TARGET) {
+    mode = 'CONNECT: SELECT TARGET';
+    modeColor = 'bg-cyan-500';
+  } else if (cameraState === 'animating') {
     mode = 'ANIMATING';
     modeColor = 'bg-yellow-500';
   } else if (isDragging) {
@@ -97,12 +113,22 @@ export default function DebugOverlay({
             {centerNodeName || (centerNodeId ? `ID: ${centerNodeId.slice(0, 8)}...` : 'None')}
           </span>
         </div>
+
+        {selectedNodeName && (
+          <div className="flex justify-between gap-4">
+            <span className="text-gray-400">Selected:</span>
+            <span className="text-xs font-semibold text-cyan-400">{selectedNodeName}</span>
+          </div>
+        )}
       </div>
 
       <div className="border-t border-white/20 pt-2 text-gray-400 text-[10px]">
         <div>SPIN/ZOOM: Drag/scroll to move camera</div>
         <div>DRAG NODE: Click+drag node to reposition</div>
         <div>SELECT: Click node to center view</div>
+        {interactionMode !== InteractionMode.IDLE && (
+          <div className="text-cyan-400">CONNECT: Click nodes to link them</div>
+        )}
       </div>
     </div>
   );

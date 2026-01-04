@@ -8,6 +8,15 @@ import { InteractionMode, PanelType } from '@/types';
 import { softRefetchGraphData } from '@/lib/refetch';
 import GraphCanvas from '@/components/Graph/GraphCanvas';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import ActionBar from '@/components/ActionBar/ActionBar';
+import JumpToButtons from '@/components/ActionBar/JumpToButtons';
+import PanelWrapper from '@/components/Panels/PanelWrapper';
+import InspectorPanel from '@/components/Panels/InspectorPanel';
+import EditPanel from '@/components/Panels/EditPanel';
+import InvitePanel from '@/components/Panels/InvitePanel';
+import CreatePanel from '@/components/Panels/CreatePanel';
+import UsePanel from '@/components/Panels/UsePanel';
+import ConnectPanel from '@/components/Panels/ConnectPanel';
 
 interface NetworkViewProps {
   userEmail: string;
@@ -104,14 +113,13 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
   };
 
   // Phase 2: Soft refetch (replaces window.location.reload())
-  const handleRefetch = async () => {
+  const handleRefetch = async (): Promise<void> => {
     const supabase = createClient();
-    const result = await softRefetchGraphData(supabase, setNodes, setEdges);
-    return result.success;
+    await softRefetchGraphData(supabase, setNodes, setEdges);
   };
 
   // Phase 2: Refetch and center on new node
-  const handleRefetchAndCenter = async (newNodeId: string) => {
+  const handleRefetchAndCenter = async (newNodeId: string): Promise<void> => {
     await handleRefetch();
     setCenterNodeId(newNodeId);
   };
@@ -173,6 +181,25 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
     return () => window.removeEventListener('keydown', handleEsc);
   }, [interactionMode, activePanel]);
 
+  // Find source and target nodes for ConnectPanel
+  const sourceNode = nodes.find((n) => n.id === connectSourceId);
+  const targetNode = nodes.find((n) => n.id === selectedNodeId);
+  const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+
+  // Handle delete node
+  const handleDeleteNode = async () => {
+    if (!selectedNodeId) return;
+
+    const response = await fetch(`/api/nodes/${selectedNodeId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Failed to delete node');
+    }
+  };
+
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">
       {/* Header */}
@@ -205,6 +232,31 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
         </div>
       </div>
 
+      {/* Action Bar */}
+      <ActionBar
+        selectedNodeId={selectedNodeId}
+        interactionMode={interactionMode}
+        physicsPaused={physicsPaused}
+        debugVisible={debugVisible}
+        onInvite={() => openPanel(PanelType.INVITE)}
+        onCreate={() => openPanel(PanelType.CREATE)}
+        onUse={() => openPanel(PanelType.USE)}
+        onConnect={startConnectMode}
+        onEdit={() => openPanel(PanelType.EDIT, selectedNodeId!)}
+        onTogglePause={() => setPhysicsPaused((prev) => !prev)}
+        onToggleDebug={() => setDebugVisible((prev) => !prev)}
+      />
+
+      {/* Jump To Buttons (Dev Feature) */}
+      <JumpToButtons
+        nodes={nodes}
+        centerNodeId={centerNodeId}
+        onJumpTo={(nodeId) => {
+          setCenterNodeId(nodeId);
+          setRecenterTrigger((prev) => prev + 1);
+        }}
+      />
+
       {/* Graph Canvas */}
       <div className="flex-1 relative">
         {loading ? (
@@ -220,22 +272,116 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
             centerNodeId={centerNodeId}
             onNodeClick={(nodeId) => {
               setCenterNodeId(nodeId);
-              // Phase 2: Open inspector panel when clicking node
               openPanel(PanelType.INSPECTOR, nodeId);
             }}
             recenterTrigger={recenterTrigger}
-            // Phase 2: Connect mode props
             interactionMode={interactionMode}
             connectSourceId={connectSourceId}
             onConnectSelect={handleConnectSelect}
             onConnectTarget={handleConnectTarget}
-            // Phase 2: Physics control
             physicsPaused={physicsPaused}
-            // Phase 2: Debug visibility
             debugVisible={debugVisible}
           />
         )}
       </div>
+
+      {/* Panels */}
+      <PanelWrapper
+        isOpen={activePanel === PanelType.INSPECTOR}
+        onClose={closePanel}
+        title="Node Details"
+      >
+        {selectedNodeId && (
+          <InspectorPanel
+            nodeId={selectedNodeId}
+            onConnect={startConnectMode}
+            onEdit={() => openPanel(PanelType.EDIT, selectedNodeId)}
+            onDelete={handleDeleteNode}
+            onRefetch={handleRefetch}
+          />
+        )}
+      </PanelWrapper>
+
+      <PanelWrapper
+        isOpen={activePanel === PanelType.EDIT}
+        onClose={closePanel}
+        title="Edit Node"
+      >
+        {selectedNodeId && (
+          <EditPanel
+            nodeId={selectedNodeId}
+            onSuccess={handleRefetch}
+            onClose={closePanel}
+          />
+        )}
+      </PanelWrapper>
+
+      <PanelWrapper
+        isOpen={activePanel === PanelType.INVITE}
+        onClose={closePanel}
+        title="Invite Person"
+      >
+        {centerNodeId && (
+          <InvitePanel
+            centerNodeId={centerNodeId}
+            onSuccess={handleRefetchAndCenter}
+            onClose={closePanel}
+          />
+        )}
+      </PanelWrapper>
+
+      <PanelWrapper
+        isOpen={activePanel === PanelType.CREATE}
+        onClose={closePanel}
+        title="Create Resource"
+      >
+        {centerNodeId && (
+          <CreatePanel
+            centerNodeId={centerNodeId}
+            onSuccess={handleRefetchAndCenter}
+            onSwitchToUse={() => openPanel(PanelType.USE)}
+            onClose={closePanel}
+          />
+        )}
+      </PanelWrapper>
+
+      <PanelWrapper
+        isOpen={activePanel === PanelType.USE}
+        onClose={closePanel}
+        title="Use Resource"
+      >
+        {centerNodeId && (
+          <UsePanel
+            centerNodeId={centerNodeId}
+            onSuccess={handleRefetch}
+            onClose={closePanel}
+          />
+        )}
+      </PanelWrapper>
+
+      <PanelWrapper
+        isOpen={activePanel === PanelType.CONNECT}
+        onClose={() => {
+          closePanel();
+          exitConnectMode();
+        }}
+        title="Connect Nodes"
+      >
+        {sourceNode && targetNode && (
+          <ConnectPanel
+            sourceNode={sourceNode}
+            targetNode={targetNode}
+            onSuccess={async () => {
+              await handleRefetch();
+              exitConnectMode();
+            }}
+            onClose={() => {
+              closePanel();
+              exitConnectMode();
+            }}
+          />
+        )}
+      </PanelWrapper>
     </div>
   );
 }
