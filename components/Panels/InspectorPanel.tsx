@@ -42,7 +42,12 @@ export default function InspectorPanel({
       const result = await response.json();
 
       if (response.ok) {
-        setData(result.data);
+        // API returns: { success, node, edges: { incoming, outgoing } }
+        setData({
+          node: result.node,
+          incoming: result.edges.incoming,
+          outgoing: result.edges.outgoing,
+        });
       } else {
         setError(result.error || 'Failed to load node');
       }

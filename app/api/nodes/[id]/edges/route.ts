@@ -14,10 +14,10 @@ export async function GET(
     const supabase = await createClient();
     const { id } = await params;
 
-    // Verify node exists
+    // Verify node exists and get all fields
     const { data: node, error: nodeError } = await supabase
       .from('nodes')
-      .select('id, name, type')
+      .select('*')
       .eq('id', id)
       .maybeSingle();
 
