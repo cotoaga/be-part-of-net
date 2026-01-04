@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import type { Node, Edge } from '@/types';
+import { InteractionMode, PanelType } from '@/types';
+import { softRefetchGraphData } from '@/lib/refetch';
 import GraphCanvas from '@/components/Graph/GraphCanvas';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
@@ -15,11 +17,25 @@ interface NetworkViewProps {
 
 export default function NetworkView({ userEmail, userNodeId, userName }: NetworkViewProps) {
   const router = useRouter();
+
+  // Existing state
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [centerNodeId, setCenterNodeId] = useState<string | null>(userNodeId);
   const [recenterTrigger, setRecenterTrigger] = useState(0);
+
+  // Phase 2: Interaction state
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>(InteractionMode.IDLE);
+  const [connectSourceId, setConnectSourceId] = useState<string | null>(null);
+  const [physicsPaused, setPhysicsPaused] = useState(false);
+
+  // Phase 2: Panel state (single panel model)
+  const [activePanel, setActivePanel] = useState<PanelType>(PanelType.NONE);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  // Phase 2: Debug overlay toggle
+  const [debugVisible, setDebugVisible] = useState(true);
 
   useEffect(() => {
     fetchGraphData();
@@ -73,8 +89,8 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
       const data = await response.json();
 
       if (data.success) {
-        // Hard reload to ensure fresh data
-        window.location.reload();
+        // Phase 2: Use soft refetch instead of hard reload
+        await handleRefetch();
       } else {
         alert('Failed to reset: ' + data.error);
       }
@@ -86,6 +102,76 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
   const handleRecenter = () => {
     setRecenterTrigger(prev => prev + 1);
   };
+
+  // Phase 2: Soft refetch (replaces window.location.reload())
+  const handleRefetch = async () => {
+    const supabase = createClient();
+    const result = await softRefetchGraphData(supabase, setNodes, setEdges);
+    return result.success;
+  };
+
+  // Phase 2: Refetch and center on new node
+  const handleRefetchAndCenter = async (newNodeId: string) => {
+    await handleRefetch();
+    setCenterNodeId(newNodeId);
+  };
+
+  // Phase 2: State transition functions
+  const openPanel = (panel: PanelType, nodeId?: string) => {
+    setActivePanel(panel);
+    setSelectedNodeId(nodeId || null);
+    // Reset connect mode when opening a panel
+    setInteractionMode(InteractionMode.IDLE);
+    setConnectSourceId(null);
+  };
+
+  const closePanel = () => {
+    setActivePanel(PanelType.NONE);
+    setSelectedNodeId(null);
+  };
+
+  const startConnectMode = () => {
+    setInteractionMode(InteractionMode.CONNECT_SELECT);
+    setConnectSourceId(null);
+    // Close any open panels
+    setActivePanel(PanelType.NONE);
+  };
+
+  const exitConnectMode = () => {
+    setInteractionMode(InteractionMode.IDLE);
+    setConnectSourceId(null);
+  };
+
+  // Phase 2: Connect mode handlers
+  const handleConnectSelect = (nodeId: string) => {
+    setConnectSourceId(nodeId);
+    setInteractionMode(InteractionMode.CONNECT_TARGET);
+  };
+
+  const handleConnectTarget = (nodeId: string) => {
+    setSelectedNodeId(nodeId);
+    setActivePanel(PanelType.CONNECT);
+    // Keep connect mode active until panel closes
+  };
+
+  // Phase 2: ESC key listener (single listener for all)
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Priority 1: Exit connect mode
+        if (interactionMode !== InteractionMode.IDLE) {
+          exitConnectMode();
+        }
+        // Priority 2: Close panel
+        else if (activePanel !== PanelType.NONE) {
+          closePanel();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [interactionMode, activePanel]);
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">
@@ -132,8 +218,21 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
             nodes={nodes}
             edges={edges}
             centerNodeId={centerNodeId}
-            onNodeClick={(nodeId) => setCenterNodeId(nodeId)}
+            onNodeClick={(nodeId) => {
+              setCenterNodeId(nodeId);
+              // Phase 2: Open inspector panel when clicking node
+              openPanel(PanelType.INSPECTOR, nodeId);
+            }}
             recenterTrigger={recenterTrigger}
+            // Phase 2: Connect mode props
+            interactionMode={interactionMode}
+            connectSourceId={connectSourceId}
+            onConnectSelect={handleConnectSelect}
+            onConnectTarget={handleConnectTarget}
+            // Phase 2: Physics control
+            physicsPaused={physicsPaused}
+            // Phase 2: Debug visibility
+            debugVisible={debugVisible}
           />
         )}
       </div>

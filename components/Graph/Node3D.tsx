@@ -3,6 +3,7 @@ import { Sphere, Html } from '@react-three/drei';
 import { useThree, useFrame } from '@react-three/fiber';
 import type { Mesh, Vector3, Group } from 'three';
 import type { GraphNode } from '@/types';
+import { InteractionMode } from '@/types';
 import * as THREE from 'three';
 
 interface Node3DProps {
@@ -15,6 +16,11 @@ interface Node3DProps {
   onDrag: (nodeId: string, position: [number, number, number]) => void;
   onDragEnd: () => void;
   isDragged: boolean;
+  // Phase 2: Connect mode props
+  interactionMode: InteractionMode;
+  connectSourceId: string | null;
+  onConnectSelect: (nodeId: string) => void;
+  onConnectTarget: (nodeId: string) => void;
 }
 
 export default function Node3D({
@@ -26,7 +32,11 @@ export default function Node3D({
   onDragStart,
   onDrag,
   onDragEnd,
-  isDragged
+  isDragged,
+  interactionMode,
+  connectSourceId,
+  onConnectSelect,
+  onConnectTarget
 }: Node3DProps) {
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
@@ -80,6 +90,13 @@ export default function Node3D({
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation();
+
+    // Phase 2: Prevent drag during connect mode
+    const isInConnectMode = interactionMode !== InteractionMode.IDLE;
+    if (isInConnectMode) {
+      return;
+    }
+
     isDraggingRef.current = true;
 
     // Capture pointer to ensure we receive all events even if cursor leaves the sphere
@@ -148,14 +165,49 @@ export default function Node3D({
 
   const handleClick = (e: any) => {
     e.stopPropagation();
+
     // Only trigger click if we weren't dragging
-    if (!isDraggingRef.current) {
-      console.log('[Node3D] Click detected on node:', node.name, node.id);
-      onClick();
-    } else {
+    if (isDraggingRef.current) {
       console.log('[Node3D] Click suppressed - was dragging');
+      return;
     }
+
+    // Phase 2: Priority 1 - Connect mode selection
+    if (interactionMode === InteractionMode.CONNECT_SELECT) {
+      console.log('[Node3D] Connect mode: selecting source node:', node.name);
+      onConnectSelect(node.id);
+      return;
+    }
+
+    if (interactionMode === InteractionMode.CONNECT_TARGET) {
+      console.log('[Node3D] Connect mode: selecting target node:', node.name);
+      onConnectTarget(node.id);
+      return;
+    }
+
+    // Phase 2: Priority 2 - Normal click (center + open inspector)
+    console.log('[Node3D] Normal click on node:', node.name, node.id);
+    onClick();
   };
+
+  // Phase 2: Visual feedback for connect mode
+  const isInConnectMode = interactionMode !== InteractionMode.IDLE;
+  const isConnectSource = node.id === connectSourceId;
+  const isValidTarget = interactionMode === InteractionMode.CONNECT_TARGET && node.id !== connectSourceId;
+
+  // Adjust opacity for connect mode
+  let finalOpacity = opacity;
+  if (isInConnectMode && !isConnectSource && !isValidTarget) {
+    finalOpacity = opacity * 0.3; // Fade non-relevant nodes
+  }
+
+  // Adjust emissive intensity for connect mode
+  let emissiveIntensity = isCenter ? 0.6 : isRoot ? 0.4 : 0.15;
+  if (isConnectSource) {
+    emissiveIntensity = 0.8; // Glow source node
+  } else if (isValidTarget && hovered) {
+    emissiveIntensity = 0.5; // Highlight hovered targets
+  }
 
   return (
     <group ref={groupRef}>
@@ -169,7 +221,12 @@ export default function Node3D({
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);
-          document.body.style.cursor = isDragged ? 'grabbing' : 'grab';
+          // Phase 2: Cursor changes for connect mode
+          if (isInConnectMode) {
+            document.body.style.cursor = 'pointer';
+          } else {
+            document.body.style.cursor = isDragged ? 'grabbing' : 'grab';
+          }
         }}
         onPointerOut={(e) => {
           e.stopPropagation();
@@ -182,8 +239,8 @@ export default function Node3D({
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={isCenter ? 0.6 : isRoot ? 0.4 : 0.15}
-          opacity={opacity}
+          emissiveIntensity={emissiveIntensity}
+          opacity={finalOpacity}
           transparent
           metalness={0.85} // High metalness for reflective look
           roughness={0.25} // Low roughness for shiny surface
@@ -201,14 +258,14 @@ export default function Node3D({
             emissiveIntensity={0.3}
             metalness={0.9}
             roughness={0.2}
-            opacity={opacity * 0.6}
+            opacity={finalOpacity * 0.6}
             transparent
           />
         </mesh>
       )}
 
       {/* Label on hover */}
-      {(hovered || isCenter) && opacity > 0.5 && (
+      {(hovered || isCenter || isConnectSource) && finalOpacity > 0.3 && (
         <Html distanceFactor={10} position={[0, scale + 0.5, 0]} center>
           <div
             className="px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none"

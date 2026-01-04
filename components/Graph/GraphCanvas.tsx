@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import type { Node, Edge, GraphNode, GraphEdge } from '@/types';
+import { InteractionMode } from '@/types';
 import Node3D from './Node3D';
 import Edge3D from './Edge3D';
 import { useForceSimulation } from '@/lib/hooks/useForceSimulation';
@@ -18,6 +19,15 @@ interface GraphCanvasProps {
   centerNodeId: string | null;
   onNodeClick: (nodeId: string) => void;
   recenterTrigger?: number;
+  // Phase 2: Connect mode props
+  interactionMode: InteractionMode;
+  connectSourceId: string | null;
+  onConnectSelect: (nodeId: string) => void;
+  onConnectTarget: (nodeId: string) => void;
+  // Phase 2: Physics control
+  physicsPaused: boolean;
+  // Phase 2: Debug visibility
+  debugVisible: boolean;
   onDebugUpdate?: (info: {
     cameraState: string;
     isDragging: boolean;
@@ -120,7 +130,19 @@ function CameraController({
   return null;
 }
 
-function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger, onDebugUpdate }: GraphCanvasProps) {
+function Scene({
+  nodes,
+  edges,
+  centerNodeId,
+  onNodeClick,
+  recenterTrigger,
+  interactionMode,
+  connectSourceId,
+  onConnectSelect,
+  onConnectTarget,
+  physicsPaused,
+  onDebugUpdate
+}: GraphCanvasProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [cameraState, setCameraState] = useState<CameraState>(CameraState.INITIALIZING);
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
@@ -249,8 +271,14 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger, onDeb
     return { nodes: graphNodes, edges: graphEdges };
   }, [nodes, edges]);
 
-  // Run force simulation (pause when dragging)
-  useForceSimulation(graphData.nodes, graphData.edges, {}, isPaused || !!draggedNodeId);
+  // Run force simulation (pause when dragging or user manually paused or in connect mode)
+  const isInConnectMode = interactionMode !== InteractionMode.IDLE;
+  useForceSimulation(
+    graphData.nodes,
+    graphData.edges,
+    {},
+    isPaused || !!draggedNodeId || physicsPaused || isInConnectMode
+  );
 
   // Calculate fog of war
   const visibility = useMemo(() => {
@@ -348,13 +376,18 @@ function Scene({ nodes, edges, centerNodeId, onNodeClick, recenterTrigger, onDeb
             onDrag={handleNodeDrag}
             onDragEnd={handleNodeDragEnd}
             isDragged={draggedNodeId === node.id}
+            // Phase 2: Connect mode props
+            interactionMode={interactionMode}
+            connectSourceId={connectSourceId}
+            onConnectSelect={onConnectSelect}
+            onConnectTarget={onConnectTarget}
           />
         );
       })}
 
       <OrbitControls
         ref={orbitControlsRef}
-        enabled={cameraState === CameraState.USER_CONTROL && !draggedNodeId}
+        enabled={cameraState === CameraState.USER_CONTROL && !draggedNodeId && !isInConnectMode}
         enableDamping
         dampingFactor={0.05}
         rotateSpeed={0.5}
@@ -386,16 +419,18 @@ export default function GraphCanvas(props: GraphCanvasProps) {
         <Scene {...props} onDebugUpdate={setDebugInfo} />
       </Canvas>
 
-      <DebugOverlay
-        cameraState={debugInfo.cameraState}
-        isDragging={debugInfo.isDragging}
-        orbitControlsEnabled={debugInfo.orbitControlsEnabled}
-        forceSimulationPaused={debugInfo.forceSimulationPaused}
-        nodeCount={debugInfo.nodeCount}
-        edgeCount={debugInfo.edgeCount}
-        centerNodeId={props.centerNodeId}
-        centerNodeName={props.nodes.find(n => n.id === props.centerNodeId)?.name}
-      />
+      {props.debugVisible && (
+        <DebugOverlay
+          cameraState={debugInfo.cameraState}
+          isDragging={debugInfo.isDragging}
+          orbitControlsEnabled={debugInfo.orbitControlsEnabled}
+          forceSimulationPaused={debugInfo.forceSimulationPaused}
+          nodeCount={debugInfo.nodeCount}
+          edgeCount={debugInfo.edgeCount}
+          centerNodeId={props.centerNodeId}
+          centerNodeName={props.nodes.find(n => n.id === props.centerNodeId)?.name}
+        />
+      )}
     </div>
   );
 }
