@@ -53,7 +53,13 @@ export default function InvitePanel({ centerNodeId, onSuccess, onClose }: Invite
         if (nodeResponse.status === 409 && nodeResult.existingNodeId) {
           setError(`Person with email "${email}" already exists`);
         } else {
-          setError(nodeResult.error || 'Failed to create person');
+          // Show detailed validation errors if available
+          if (nodeResult.details && Array.isArray(nodeResult.details)) {
+            const errorMsg = nodeResult.details.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+            setError(errorMsg || nodeResult.error || 'Failed to create person');
+          } else {
+            setError(nodeResult.error || 'Failed to create person');
+          }
         }
         setSubmitting(false);
         return;

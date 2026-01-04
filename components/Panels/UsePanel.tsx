@@ -83,7 +83,13 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
         await onSuccess();
         onClose();
       } else {
-        setError(result.error || 'Failed to create connection');
+        // Show detailed validation errors if available
+        if (result.details && Array.isArray(result.details)) {
+          const errorMsg = result.details.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+          setError(errorMsg || result.error || 'Failed to create connection');
+        } else {
+          setError(result.error || 'Failed to create connection');
+        }
       }
     } catch (err) {
       setError('Network error');
