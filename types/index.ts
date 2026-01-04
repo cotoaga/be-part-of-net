@@ -51,3 +51,21 @@ export interface User {
   email: string;
   nodeId: string | null;
 }
+
+// Interaction mode for graph interactions (Phase 2)
+export enum InteractionMode {
+  IDLE = 'idle',
+  CONNECT_SELECT = 'connect_select',
+  CONNECT_TARGET = 'connect_target',
+}
+
+// Panel types for single-panel state machine (Phase 2)
+export enum PanelType {
+  NONE = 'none',
+  INSPECTOR = 'inspector',
+  INVITE = 'invite',
+  CREATE = 'create',
+  USE = 'use',
+  CONNECT = 'connect',
+  EDIT = 'edit',
+}
