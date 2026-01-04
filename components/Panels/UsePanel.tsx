@@ -66,6 +66,13 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
       setConnecting(targetNodeId);
       setError(null);
 
+      // Validate centerNodeId
+      if (!centerNodeId) {
+        setError('No node selected. Please select a node first.');
+        setConnecting(null);
+        return;
+      }
+
       // Create 'using' edge
       const response = await fetch('/api/edges', {
         method: 'POST',

@@ -55,6 +55,11 @@ export default function CreatePanel({
       return;
     }
 
+    if (!centerNodeId) {
+      setError('No node selected. Please select a node first.');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
