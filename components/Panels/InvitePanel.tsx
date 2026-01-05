@@ -70,9 +70,15 @@ export default function InvitePanel({ centerNodeId, onSuccess, onClose }: Invite
         return;
       }
 
-      const newNodeId = nodeResult.data.id;
+      const newNodeId = nodeResult.node.id;
 
       // Step 2: Create invited edge
+      console.log('[InvitePanel] Creating edge:', {
+        from_node_id: centerNodeId,
+        to_node_id: newNodeId,
+        relation: 'invited',
+      });
+
       const edgeResponse = await fetch('/api/edges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -84,16 +90,23 @@ export default function InvitePanel({ centerNodeId, onSuccess, onClose }: Invite
       });
 
       const edgeResult = await edgeResponse.json();
+      console.log('[InvitePanel] Edge creation response:', {
+        ok: edgeResponse.ok,
+        status: edgeResponse.status,
+        result: edgeResult,
+      });
 
       if (!edgeResponse.ok) {
         // Edge creation failed, but node was created
         // We could try to delete the node here, but let's just show error
+        console.error('[InvitePanel] Edge creation failed:', edgeResult);
         setError(edgeResult.error || 'Person created but failed to create invitation edge');
         setSubmitting(false);
         return;
       }
 
       // Success!
+      console.log('[InvitePanel] Both node and edge created successfully!');
       await onSuccess(newNodeId);
       onClose();
     } catch (err) {

@@ -205,7 +205,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-[var(--color-surface)]">
         <div>
-          <h1 className="text-xl font-bold">be-part-of.net</h1>
+          <h1 className="text-xl font-bold">⊙ be-part-of.net</h1>
           <p className="text-sm text-[var(--color-text-secondary)]">
             Welcome, {userName}
           </p>

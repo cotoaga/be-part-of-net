@@ -40,8 +40,14 @@ export async function softRefetchGraphData(
     }
 
     // Update state
-    if (nodesRes.data) setNodes(nodesRes.data);
-    if (edgesRes.data) setEdges(edgesRes.data);
+    if (nodesRes.data) {
+      console.log('[softRefetchGraphData] Fetched nodes:', nodesRes.data.length);
+      setNodes(nodesRes.data);
+    }
+    if (edgesRes.data) {
+      console.log('[softRefetchGraphData] Fetched edges:', edgesRes.data.length, edgesRes.data);
+      setEdges(edgesRes.data);
+    }
 
     return { success: true };
   } catch (error) {

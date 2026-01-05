@@ -264,13 +264,13 @@ export default function Node3D({
         </mesh>
       )}
 
-      {/* Label on hover */}
-      {(hovered || isCenter || isConnectSource) && finalOpacity > 0.3 && (
-        <Html distanceFactor={10} position={[0, scale + 0.5, 0]} center>
+      {/* Label - always visible */}
+      {finalOpacity > 0.1 && (
+        <Html distanceFactor={8} position={[0, scale + 0.5, 0]} center>
           <div
-            className="px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none"
+            className="px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap pointer-events-none"
             style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              backgroundColor: 'rgba(0, 0, 0, 0.75)',
               color: 'white',
             }}
           >

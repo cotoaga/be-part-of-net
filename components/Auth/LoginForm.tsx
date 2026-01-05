@@ -37,7 +37,7 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md mx-auto p-8 card">
       <h1 className="text-3xl font-bold mb-2 text-center">
-        be-part-of.net
+        ⊙ be-part-of.net
       </h1>
       <p className="text-center text-[var(--color-text-secondary)] mb-8">
         The Anti-Social Social Network

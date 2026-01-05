@@ -13,6 +13,13 @@ export function calculateFogOfWar(
 ): Map<string, VisibilityInfo> {
   const visibility = new Map<string, VisibilityInfo>();
 
+  console.log('[fogOfWar] Calculating visibility:', {
+    centerNodeId,
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+    edges: edges.map(e => `${e.from_node_id.slice(0,8)}→${e.to_node_id.slice(0,8)} (${e.relation})`),
+  });
+
   if (!centerNodeId) {
     // No center node, hide everything
     nodes.forEach((node) => {
