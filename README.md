@@ -1,4 +1,4 @@
-# be-part-of.net
+# ⊙ be-part-of.net
 
 **The Anti-Social Social Network** - A consciousness network platform that visualizes human and AI relationships as an interactive 3D graph.
 
@@ -26,6 +26,7 @@
 - **Root Node Distinction:** Golden sphere with metallic ring
 - **Interactive Dragging:** Click and drag nodes to reposition
 - **Dynamic Sizing:** Based on connection count (min 0.3, max 1.0)
+- **Always-Visible Labels:** Node names permanently displayed with larger text
 
 ### Edge Rendering
 - **Directional Edges** with arrow heads showing relationship direction
@@ -240,8 +241,8 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Version:** 0.2.0 (Major Graph Refactoring)
-**Last Updated:** 2026-01-03
+**Version:** 0.2.1 (Branding & UX Updates)
+**Last Updated:** 2026-01-06
 **Maintained by:** [@kydroon](https://github.com/kydroon)
 
 🌐 **Production:** [https://be-part-of-net.vercel.app](https://be-part-of-net.vercel.app)

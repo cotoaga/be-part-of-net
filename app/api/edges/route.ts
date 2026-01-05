@@ -16,7 +16,20 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
-    const validated = createEdgeSchema.parse(body);
+    console.log('[POST /api/edges] Received body:', body);
+    console.log('[POST /api/edges] Body types:', {
+      from_node_id: typeof body.from_node_id,
+      to_node_id: typeof body.to_node_id,
+      relation: typeof body.relation,
+    });
+
+    let validated;
+    try {
+      validated = createEdgeSchema.parse(body);
+    } catch (validationError: any) {
+      console.error('[POST /api/edges] Validation error:', validationError);
+      throw validationError;
+    }
 
     // Fetch both nodes to validate they exist and check relation type compatibility
     const { data: nodes, error: nodesError } = await supabase

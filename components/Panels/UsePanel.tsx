@@ -17,6 +17,8 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
   const [connecting, setConnecting] = useState<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
 
+  console.log('[UsePanel] Mounted with centerNodeId:', centerNodeId);
+
   // Debounced search
   useEffect(() => {
     if (debounceTimer.current) {
@@ -72,6 +74,12 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
         setConnecting(null);
         return;
       }
+
+      console.log('[UsePanel] Creating edge:', {
+        from_node_id: centerNodeId,
+        to_node_id: targetNodeId,
+        relation: 'using',
+      });
 
       // Create 'using' edge
       const response = await fetch('/api/edges', {

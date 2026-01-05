@@ -348,6 +348,14 @@ Creates a small test network:
 - ✅ **Recenter button:** Triggers camera animation back to centered node
 - ✅ **OrbitControls:** User can freely pan/rotate/zoom without interference
 
+### Branding & UX Updates (January 6, 2026)
+- ✅ **Circumpunct branding:** Added ⊙ symbol to page title, headers, and favicon across all pages
+- ✅ **Always-visible node labels:** Node names now permanently visible with larger text (text-sm, font-medium)
+- ✅ **InvitePanel fix:** Corrected API response structure bug (node.id vs data.id)
+- ✅ **Favicon migration:** Moved favicon from public/ to app/ directory (Next.js 14 App Router convention)
+- ✅ **Dependency cleanup:** Removed deprecated @next/font package (now built into Next.js 14)
+- ✅ **Debug logging:** Added comprehensive logging to InvitePanel, refetch, and fogOfWar for troubleshooting
+
 ## Current State: What's Built
 
 ### ✅ Fully Implemented
@@ -438,13 +446,13 @@ npm run type-check               # TypeScript check
 
 ---
 
-**Last Updated:** 2026-01-03
-**Version:** 0.2.0 (Major Graph Refactoring)
+**Last Updated:** 2026-01-06
+**Version:** 0.2.1 (Branding & UX Updates)
 **Maintained by:** kydroon
 
 **Recent Commits:**
+- `7831da8c` - feat(ui): add circumpunct branding and fix invite functionality
 - `df3a6da2` - fix(ci): exclude archive folder from Jest test discovery
 - `ad9b0480` - enhance(graph): beautify nodes with high-res geometry and PBR materials
 - `c41ecd2c` - fix(graph): eliminate initial displacement by setting camera directly on mount
 - `5aaa8bcf` - fix(graph): prevent node displacement on hover by persisting positions
-- `4634a6aa` - fix(graph): use Array.from for Map iterator compatibility

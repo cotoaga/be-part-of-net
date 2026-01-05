@@ -47,10 +47,11 @@ export async function POST() {
     }
 
     // Insert Kurt (ROOT - no invited_by)
+    // Using valid RFC 4122 UUID v4 format (version=4, variant=8)
     const { data: kurt, error: kurtError } = await adminClient
       .from('nodes')
       .insert({
-        id: '00000000-0000-0000-0000-000000000001',
+        id: '00000000-0000-4000-8000-000000000001',
         type: 'person',
         name: 'Kurt',
         email: 'kurt@cotoaga.net',
@@ -70,12 +71,13 @@ export async function POST() {
     }
 
     // Insert other persons
+    // Using valid RFC 4122 UUID v4 format (version=4, variant=8)
     const persons = [
-      { id: '00000000-0000-0000-0000-000000000002', name: 'Alice', email: 'alice@example.com', invited_by: kurt?.id },
-      { id: '00000000-0000-0000-0000-000000000003', name: 'Bob', email: 'bob@example.com', invited_by: '00000000-0000-0000-0000-000000000002' },
-      { id: '00000000-0000-0000-0000-000000000004', name: 'Dave', email: 'dave@example.com', invited_by: kurt?.id },
-      { id: '00000000-0000-0000-0000-000000000005', name: 'Carol', email: 'carol@example.com', invited_by: '00000000-0000-0000-0000-000000000004' },
-      { id: '00000000-0000-0000-0000-000000000006', name: 'Eddie', email: 'eddie@example.com', invited_by: kurt?.id },
+      { id: '00000000-0000-4000-8000-000000000002', name: 'Alice', email: 'alice@example.com', invited_by: kurt?.id },
+      { id: '00000000-0000-4000-8000-000000000003', name: 'Bob', email: 'bob@example.com', invited_by: '00000000-0000-4000-8000-000000000002' },
+      { id: '00000000-0000-4000-8000-000000000004', name: 'Dave', email: 'dave@example.com', invited_by: kurt?.id },
+      { id: '00000000-0000-4000-8000-000000000005', name: 'Carol', email: 'carol@example.com', invited_by: '00000000-0000-4000-8000-000000000004' },
+      { id: '00000000-0000-4000-8000-000000000006', name: 'Eddie', email: 'eddie@example.com', invited_by: kurt?.id },
     ];
 
     const { error: personsError } = await adminClient.from('nodes').insert(
@@ -97,12 +99,12 @@ export async function POST() {
 
     // Insert Bob's Website (URL)
     const { error: websiteError } = await adminClient.from('nodes').insert({
-      id: '00000000-0000-0000-0000-000000000007',
+      id: '00000000-0000-4000-8000-000000000007',
       type: 'url',
       name: "Bob's Website",
       url: 'https://bob.example.com',
       description: "Bob's personal website",
-      created_by: '00000000-0000-0000-0000-000000000003',
+      created_by: '00000000-0000-4000-8000-000000000003',
     });
 
     if (websiteError) {
@@ -115,13 +117,13 @@ export async function POST() {
 
     // Insert edges
     const edgeData = [
-      { from: '00000000-0000-0000-0000-000000000001', to: '00000000-0000-0000-0000-000000000002', relation: 'invited' },
-      { from: '00000000-0000-0000-0000-000000000001', to: '00000000-0000-0000-0000-000000000004', relation: 'invited' },
-      { from: '00000000-0000-0000-0000-000000000001', to: '00000000-0000-0000-0000-000000000006', relation: 'invited' },
-      { from: '00000000-0000-0000-0000-000000000002', to: '00000000-0000-0000-0000-000000000003', relation: 'invited' },
-      { from: '00000000-0000-0000-0000-000000000004', to: '00000000-0000-0000-0000-000000000005', relation: 'invited' },
-      { from: '00000000-0000-0000-0000-000000000003', to: '00000000-0000-0000-0000-000000000007', relation: 'created' },
-      { from: '00000000-0000-0000-0000-000000000003', to: '00000000-0000-0000-0000-000000000005', relation: 'knowing' },
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000002', relation: 'invited' },
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000004', relation: 'invited' },
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000006', relation: 'invited' },
+      { from: '00000000-0000-4000-8000-000000000002', to: '00000000-0000-4000-8000-000000000003', relation: 'invited' },
+      { from: '00000000-0000-4000-8000-000000000004', to: '00000000-0000-4000-8000-000000000005', relation: 'invited' },
+      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000007', relation: 'created' },
+      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000005', relation: 'knowing' },
     ];
 
     const { error: edgesError } = await adminClient.from('edges').insert(
