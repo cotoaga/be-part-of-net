@@ -115,7 +115,7 @@ export async function canDeleteNode(
 /**
  * Checks if a user has permission to delete an edge
  * - Must be the creator
- * - Cannot delete 'invited' edges (permanent provenance)
+ * - Cannot delete 'invited' or 'created' edges (permanent provenance)
  */
 export async function canDeleteEdge(
   supabase: SupabaseClient,
@@ -132,9 +132,9 @@ export async function canDeleteEdge(
     throw ApiErrors.notFound('Edge');
   }
 
-  // Check relation - cannot delete invited edges
-  if (data.relation === 'invited') {
-    throw ApiErrors.forbidden('Cannot delete invitation edges');
+  // Check relation - cannot delete invited or created edges (permanent provenance)
+  if (data.relation === 'invited' || data.relation === 'created') {
+    throw ApiErrors.forbidden(`Cannot delete ${data.relation} edges (permanent provenance)`);
   }
 
   // Check ownership

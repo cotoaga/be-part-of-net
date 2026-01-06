@@ -2,7 +2,7 @@
 
 export type NodeType = 'person' | 'url' | 'mcp';
 
-export type RelationType = 'invited' | 'knowing' | 'working_with' | 'created' | 'using';
+export type RelationType = 'invited' | 'knowing' | 'created' | 'collaborates_on';
 
 export interface Node {
   id: string;

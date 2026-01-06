@@ -21,6 +21,9 @@ interface Node3DProps {
   connectSourceId: string | null;
   onConnectSelect: (nodeId: string) => void;
   onConnectTarget: (nodeId: string) => void;
+  // Size multipliers
+  nodeSizeMultiplier: number;
+  labelSizeMultiplier: number;
 }
 
 export default function Node3D({
@@ -36,7 +39,9 @@ export default function Node3D({
   interactionMode,
   connectSourceId,
   onConnectSelect,
-  onConnectTarget
+  onConnectTarget,
+  nodeSizeMultiplier,
+  labelSizeMultiplier
 }: Node3DProps) {
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
@@ -46,9 +51,10 @@ export default function Node3D({
   const dragOffsetRef = useRef(new THREE.Vector3());
   const isDraggingRef = useRef(false);
 
-  // Node size based on connection count (min 0.3, max 1.0)
+  // Node size based on connection count (min 0.3, max 1.0) with multiplier
   const connectionCount = node.edges.length;
-  const scale = Math.min(0.3 + connectionCount * 0.1, 1.0);
+  const baseScale = Math.min(0.3 + connectionCount * 0.1, 1.0);
+  const scale = baseScale * nodeSizeMultiplier;
 
   // Node color based on type
   let color: string;
@@ -268,10 +274,11 @@ export default function Node3D({
       {finalOpacity > 0.1 && (
         <Html distanceFactor={8} position={[0, scale + 0.5, 0]} center>
           <div
-            className="px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap pointer-events-none"
+            className="px-3 py-1.5 rounded font-medium whitespace-nowrap pointer-events-none"
             style={{
               backgroundColor: 'rgba(0, 0, 0, 0.75)',
               color: 'white',
+              fontSize: `${0.875 * labelSizeMultiplier}rem`, // 0.875rem = text-sm
             }}
           >
             {node.name}

@@ -14,6 +14,14 @@ interface DebugOverlayProps {
   centerNodeName?: string | null;
   interactionMode: InteractionMode;
   selectedNodeName?: string | null;
+  nodeSizeMultiplier: number;
+  labelSizeMultiplier: number;
+  springStrength: number;
+  cameraFov: number;
+  onNodeSizeChange: (value: number) => void;
+  onLabelSizeChange: (value: number) => void;
+  onSpringStrengthChange: (value: number) => void;
+  onCameraFovChange: (value: number) => void;
 }
 
 export default function DebugOverlay({
@@ -28,6 +36,14 @@ export default function DebugOverlay({
   centerNodeName,
   interactionMode,
   selectedNodeName,
+  nodeSizeMultiplier,
+  labelSizeMultiplier,
+  springStrength,
+  cameraFov,
+  onNodeSizeChange,
+  onLabelSizeChange,
+  onSpringStrengthChange,
+  onCameraFovChange,
 }: DebugOverlayProps) {
   if (!visible) return null;
 
@@ -129,6 +145,73 @@ export default function DebugOverlay({
         {interactionMode !== InteractionMode.IDLE && (
           <div className="text-cyan-400">CONNECT: Click nodes to link them</div>
         )}
+      </div>
+
+      {/* Size Controls */}
+      <div className="border-t border-white/20 pt-2 space-y-3 pointer-events-auto">
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400 text-xs">Node Size</span>
+            <span className="text-xs font-semibold">{nodeSizeMultiplier.toFixed(1)}x</span>
+          </div>
+          <input
+            type="range"
+            min="1.0"
+            max="4.0"
+            step="0.1"
+            value={nodeSizeMultiplier}
+            onChange={(e) => onNodeSizeChange(parseFloat(e.target.value))}
+            className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400 text-xs">Label Size</span>
+            <span className="text-xs font-semibold">{labelSizeMultiplier.toFixed(1)}x</span>
+          </div>
+          <input
+            type="range"
+            min="1.0"
+            max="4.0"
+            step="0.1"
+            value={labelSizeMultiplier}
+            onChange={(e) => onLabelSizeChange(parseFloat(e.target.value))}
+            className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400 text-xs">Spring Force</span>
+            <span className="text-xs font-semibold">{springStrength.toFixed(3)}</span>
+          </div>
+          <input
+            type="range"
+            min="0.001"
+            max="0.1"
+            step="0.001"
+            value={springStrength}
+            onChange={(e) => onSpringStrengthChange(parseFloat(e.target.value))}
+            className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400 text-xs">Camera FOV</span>
+            <span className="text-xs font-semibold">{cameraFov}°</span>
+          </div>
+          <input
+            type="range"
+            min="30"
+            max="120"
+            step="5"
+            value={cameraFov}
+            onChange={(e) => onCameraFovChange(parseFloat(e.target.value))}
+            className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+          />
+        </div>
       </div>
     </div>
   );

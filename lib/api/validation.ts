@@ -3,7 +3,7 @@ import type { NodeType, RelationType } from '@/types';
 
 // Shared schemas
 export const nodeTypeSchema = z.enum(['person', 'url', 'mcp']);
-export const relationTypeSchema = z.enum(['invited', 'knowing', 'working_with', 'created', 'using']);
+export const relationTypeSchema = z.enum(['invited', 'knowing', 'created', 'collaborates_on']);
 export const uuidSchema = z.string().uuid();
 
 // Node creation schema
@@ -63,11 +63,10 @@ export const searchNodesSchema = z.object({
  * Validates relation type compatibility with node types
  *
  * Rules:
- * - invited: person → person
- * - knowing: person → person
- * - working_with: person → person
- * - created: person → url/mcp
- * - using: person → url/mcp
+ * - invited: person → person (permanent)
+ * - knowing: person → person (weak, deletable)
+ * - created: person → url/mcp (permanent)
+ * - collaborates_on: person → url/mcp (deletable)
  */
 export function validateRelationTypes(
   relation: RelationType,
@@ -77,9 +76,8 @@ export function validateRelationTypes(
   const rules: Record<RelationType, boolean> = {
     invited: sourceType === 'person' && targetType === 'person',
     knowing: sourceType === 'person' && targetType === 'person',
-    working_with: sourceType === 'person' && targetType === 'person',
     created: sourceType === 'person' && (targetType === 'url' || targetType === 'mcp'),
-    using: sourceType === 'person' && (targetType === 'url' || targetType === 'mcp'),
+    collaborates_on: sourceType === 'person' && (targetType === 'url' || targetType === 'mcp'),
   };
 
   return rules[relation] || false;

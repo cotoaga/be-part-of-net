@@ -215,19 +215,18 @@ CREATE TABLE edges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
   to_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-  relation TEXT NOT NULL CHECK (relation IN ('invited', 'knowing', 'working_with', 'created', 'using')),
+  relation TEXT NOT NULL CHECK (relation IN ('invited', 'knowing', 'created', 'collaborates_on')),
   created_by UUID REFERENCES nodes(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(from_node_id, to_node_id, relation)
 );
 ```
 
-**Relations:**
-- `invited`: Person invited another person
-- `knowing`: Person knows person
-- `working_with`: Person works with person
-- `created`: Person created URL/MCP
-- `using`: Person uses URL/MCP
+**Relations (Edge Hierarchy - Strongest → Weakest):**
+- `invited`: Person invited another person (permanent provenance, cannot be deleted)
+- `created`: Person created URL/MCP (permanent provenance, cannot be deleted)
+- `collaborates_on`: Person collaborates on URL/MCP (active contribution, deletable)
+- `knowing`: Person knows person (weak connection, deletable)
 
 ### Indexes
 ```sql
@@ -322,6 +321,17 @@ Creates a small test network:
 - All routes use same aesthetic (no terminal routes in fresh rebuild)
 
 ## Recent Changes (January 2026)
+
+### Collaboration System Redesign (January 6, 2026)
+- ✅ **Edge Hierarchy:** Established clear permanence rules (invited/created permanent, collaborates_on/knowing deletable)
+- ✅ **Unified Collaboration:** Replaced "using" and "working_with" with single "collaborates_on" relation
+- ✅ **Dual Edge Creation:** Creators automatically get both "created" + "collaborates_on" edges when creating resources
+- ✅ **Migration:** Converted existing "using" edges to "collaborates_on", deleted all "working_with" edges
+- ✅ **UI Updates:** Renamed UsePanel → CollaboratePanel for project-centric language
+- ✅ **API Protection:** Updated deletion policies to prevent removal of "created" edges (permanent provenance)
+- ✅ **Type System:** Updated RelationType to reflect new relation hierarchy
+- ✅ **ConnectPanel:** Simplified to only show "knowing" (person→person) and "collaborates_on" (person→url/mcp)
+- ✅ **Test Data:** Updated reset endpoint to demonstrate dual-edge pattern
 
 ### Fresh Rebuild Completed (December 2025)
 - ✅ Archived old codebase to `/archive` folder

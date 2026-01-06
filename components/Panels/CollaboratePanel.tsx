@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Node } from '@/types';
 
-interface UsePanelProps {
+interface CollaboratePanelProps {
   centerNodeId: string;
   onSuccess: () => Promise<void>;
   onClose: () => void;
 }
 
-export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelProps) {
+export default function CollaboratePanel({ centerNodeId, onSuccess, onClose }: CollaboratePanelProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Node[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
   const [connecting, setConnecting] = useState<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
 
-  console.log('[UsePanel] Mounted with centerNodeId:', centerNodeId);
+  console.log('[CollaboratePanel] Mounted with centerNodeId:', centerNodeId);
 
   // Debounced search
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
     }
   };
 
-  const handleUseNode = async (targetNodeId: string) => {
+  const handleCollaborateNode = async (targetNodeId: string) => {
     try {
       setConnecting(targetNodeId);
       setError(null);
@@ -75,20 +75,20 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
         return;
       }
 
-      console.log('[UsePanel] Creating edge:', {
+      console.log('[CollaboratePanel] Creating edge:', {
         from_node_id: centerNodeId,
         to_node_id: targetNodeId,
-        relation: 'using',
+        relation: 'collaborates_on',
       });
 
-      // Create 'using' edge
+      // Create 'collaborates_on' edge
       const response = await fetch('/api/edges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from_node_id: centerNodeId,
           to_node_id: targetNodeId,
-          relation: 'using',
+          relation: 'collaborates_on',
         }),
       });
 
@@ -101,9 +101,9 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
         // Show detailed validation errors if available
         if (result.details && Array.isArray(result.details)) {
           const errorMsg = result.details.map((d: any) => `${d.field}: ${d.message}`).join(', ');
-          setError(errorMsg || result.error || 'Failed to create connection');
+          setError(errorMsg || result.error || 'Failed to create collaboration');
         } else {
-          setError(result.error || 'Failed to create connection');
+          setError(result.error || 'Failed to create collaboration');
         }
       }
     } catch (err) {
@@ -116,7 +116,7 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
   return (
     <div className="space-y-4">
       <div className="text-sm text-[var(--color-text-secondary)]">
-        Search for existing URLs or MCP servers to mark as &ldquo;using&rdquo; from the current node.
+        Search for existing URLs or MCP servers to collaborate on from the current node.
       </div>
 
       {/* Search Input */}
@@ -199,11 +199,11 @@ export default function UsePanel({ centerNodeId, onSuccess, onClose }: UsePanelP
                     )}
                   </div>
                   <button
-                    onClick={() => handleUseNode(node.id)}
+                    onClick={() => handleCollaborateNode(node.id)}
                     disabled={isConnecting}
                     className="btn-primary text-xs px-3 py-1 whitespace-nowrap flex-shrink-0"
                   >
-                    {isConnecting ? 'Using...' : 'Use'}
+                    {isConnecting ? 'Adding...' : 'Collaborate'}
                   </button>
                 </div>
               </div>

@@ -44,6 +44,19 @@ enum CameraState {
   USER_CONTROL = 'user_control'
 }
 
+function CameraFovController({ fov }: { fov: number }) {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    if ('fov' in camera) {
+      (camera as THREE.PerspectiveCamera).fov = fov;
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, fov]);
+
+  return null;
+}
+
 function CameraController({
   target,
   cameraState,
@@ -141,8 +154,12 @@ function Scene({
   onConnectSelect,
   onConnectTarget,
   physicsPaused,
-  onDebugUpdate
-}: GraphCanvasProps) {
+  onDebugUpdate,
+  nodeSizeMultiplier = 2.0,
+  labelSizeMultiplier = 2.0,
+  springStrength = 0.01,
+  cameraFov = 75
+}: GraphCanvasProps & { nodeSizeMultiplier?: number; labelSizeMultiplier?: number; springStrength?: number; cameraFov?: number }) {
   const [isPaused, setIsPaused] = useState(false);
   const [cameraState, setCameraState] = useState<CameraState>(CameraState.INITIALIZING);
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
@@ -276,7 +293,7 @@ function Scene({
   useForceSimulation(
     graphData.nodes,
     graphData.edges,
-    {},
+    { springStrength },
     isPaused || !!draggedNodeId || physicsPaused || isInConnectMode
   );
 
@@ -332,6 +349,7 @@ function Scene({
 
   return (
     <>
+      <CameraFovController fov={cameraFov} />
       <CameraController
         target={cameraTarget}
         cameraState={cameraState}
@@ -381,6 +399,9 @@ function Scene({
             connectSourceId={connectSourceId}
             onConnectSelect={onConnectSelect}
             onConnectTarget={onConnectTarget}
+            // Size multipliers
+            nodeSizeMultiplier={nodeSizeMultiplier}
+            labelSizeMultiplier={labelSizeMultiplier}
           />
         );
       })}
@@ -410,13 +431,25 @@ export default function GraphCanvas(props: GraphCanvasProps) {
     edgeCount: 0,
   });
 
+  const [nodeSizeMultiplier, setNodeSizeMultiplier] = useState(2.0);
+  const [labelSizeMultiplier, setLabelSizeMultiplier] = useState(2.0);
+  const [springStrength, setSpringStrength] = useState(0.01);
+  const [cameraFov, setCameraFov] = useState(75);
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Canvas
         camera={{ position: [0, 5, 10], fov: 75 }}
         style={{ background: 'var(--color-background)' }}
       >
-        <Scene {...props} onDebugUpdate={setDebugInfo} />
+        <Scene
+          {...props}
+          onDebugUpdate={setDebugInfo}
+          nodeSizeMultiplier={nodeSizeMultiplier}
+          labelSizeMultiplier={labelSizeMultiplier}
+          springStrength={springStrength}
+          cameraFov={cameraFov}
+        />
       </Canvas>
 
       <DebugOverlay
@@ -431,6 +464,14 @@ export default function GraphCanvas(props: GraphCanvasProps) {
         centerNodeName={props.nodes.find(n => n.id === props.centerNodeId)?.name}
         interactionMode={props.interactionMode}
         selectedNodeName={undefined}
+        nodeSizeMultiplier={nodeSizeMultiplier}
+        labelSizeMultiplier={labelSizeMultiplier}
+        springStrength={springStrength}
+        cameraFov={cameraFov}
+        onNodeSizeChange={setNodeSizeMultiplier}
+        onLabelSizeChange={setLabelSizeMultiplier}
+        onSpringStrengthChange={setSpringStrength}
+        onCameraFovChange={setCameraFov}
       />
     </div>
   );

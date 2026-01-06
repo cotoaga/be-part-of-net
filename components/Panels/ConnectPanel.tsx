@@ -15,22 +15,35 @@ function getValidRelations(sourceType: string, targetType: string): RelationType
   const relations: RelationType[] = [];
 
   if (sourceType === 'person' && targetType === 'person') {
-    relations.push('knowing', 'working_with');
+    relations.push('knowing');
+    // Note: 'invited' is not manually creatable (only via InvitePanel)
   }
 
   if (sourceType === 'person' && (targetType === 'url' || targetType === 'mcp')) {
-    relations.push('using');
+    relations.push('collaborates_on');
+    // Note: 'created' is not manually creatable (only via CreatePanel)
   }
 
   return relations;
 }
 
 const relationLabels: Record<RelationType, { label: string; description: string }> = {
-  invited: { label: 'Invited', description: 'Person invited another person' },
-  knowing: { label: 'Knowing', description: 'Personal acquaintance or friend' },
-  working_with: { label: 'Working With', description: 'Professional collaboration' },
-  created: { label: 'Created', description: 'Created this resource' },
-  using: { label: 'Using', description: 'Uses this resource' },
+  invited: {
+    label: 'Invited',
+    description: 'Person invited another person (created via Invite Panel)',
+  },
+  knowing: {
+    label: 'Knowing',
+    description: 'Personal acquaintance or friend (weak connection)',
+  },
+  created: {
+    label: 'Created',
+    description: 'Created this resource (created via Create Panel)',
+  },
+  collaborates_on: {
+    label: 'Collaborates On',
+    description: 'Actively collaborates on this project or resource',
+  },
 };
 
 export default function ConnectPanel({

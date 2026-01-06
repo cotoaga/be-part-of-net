@@ -104,7 +104,7 @@ export default function CreatePanel({
       const newNodeId = nodeResult.data.id;
 
       // Step 2: Create 'created' edge
-      const edgeResponse = await fetch('/api/edges', {
+      const createdEdgeResponse = await fetch('/api/edges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,12 +114,32 @@ export default function CreatePanel({
         }),
       });
 
-      const edgeResult = await edgeResponse.json();
+      const createdEdgeResult = await createdEdgeResponse.json();
 
-      if (!edgeResponse.ok) {
-        setError(edgeResult.error || 'Node created but failed to create edge');
+      if (!createdEdgeResponse.ok) {
+        setError(createdEdgeResult.error || 'Node created but failed to create edge');
         setSubmitting(false);
         return;
+      }
+
+      // Step 3: Create 'collaborates_on' edge (creator also becomes collaborator)
+      const collaboratesEdgeResponse = await fetch('/api/edges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_node_id: centerNodeId,
+          to_node_id: newNodeId,
+          relation: 'collaborates_on',
+        }),
+      });
+
+      if (!collaboratesEdgeResponse.ok) {
+        // Non-fatal: created edge exists, but collaborates_on failed
+        console.warn('[CreatePanel] Failed to create collaborates_on edge');
+        setError(
+          'Resource created with "created" edge, but failed to add "collaborates_on" edge. ' +
+          'You can manually add collaboration later.'
+        );
       }
 
       // Success!

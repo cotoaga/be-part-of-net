@@ -117,12 +117,18 @@ export async function POST() {
 
     // Insert edges
     const edgeData = [
+      // Invitation edges (person → person)
       { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000002', relation: 'invited' },
       { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000004', relation: 'invited' },
       { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000006', relation: 'invited' },
       { from: '00000000-0000-4000-8000-000000000002', to: '00000000-0000-4000-8000-000000000003', relation: 'invited' },
       { from: '00000000-0000-4000-8000-000000000004', to: '00000000-0000-4000-8000-000000000005', relation: 'invited' },
+
+      // Resource creation (person → url/mcp)
       { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000007', relation: 'created' },
+      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000007', relation: 'collaborates_on' },  // NEW: Bob collaborates on his website
+
+      // Weak connection (person → person)
       { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000005', relation: 'knowing' },
     ];
 

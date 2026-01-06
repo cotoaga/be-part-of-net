@@ -15,7 +15,7 @@ import InspectorPanel from '@/components/Panels/InspectorPanel';
 import EditPanel from '@/components/Panels/EditPanel';
 import InvitePanel from '@/components/Panels/InvitePanel';
 import CreatePanel from '@/components/Panels/CreatePanel';
-import UsePanel from '@/components/Panels/UsePanel';
+import CollaboratePanel from '@/components/Panels/CollaboratePanel';
 import ConnectPanel from '@/components/Panels/ConnectPanel';
 
 interface NetworkViewProps {
@@ -348,10 +348,10 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
       <PanelWrapper
         isOpen={activePanel === PanelType.USE}
         onClose={closePanel}
-        title="Use Resource"
+        title="Collaborate on Resource"
       >
         {centerNodeId && (
-          <UsePanel
+          <CollaboratePanel
             centerNodeId={centerNodeId}
             onSuccess={handleRefetch}
             onClose={closePanel}
