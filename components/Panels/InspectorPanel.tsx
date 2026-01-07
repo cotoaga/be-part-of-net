@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Node, Edge } from '@/types';
 
 interface InspectorPanelProps {
@@ -29,11 +29,7 @@ export default function InspectorPanel({
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    fetchNodeData();
-  }, [nodeId]);
-
-  const fetchNodeData = async () => {
+  const fetchNodeData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -56,7 +52,11 @@ export default function InspectorPanel({
     } finally {
       setLoading(false);
     }
-  };
+  }, [nodeId]);
+
+  useEffect(() => {
+    fetchNodeData();
+  }, [fetchNodeData]);
 
   const handleDelete = async () => {
     if (!data?.node) return;

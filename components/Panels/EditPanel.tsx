@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Node } from '@/types';
 
 interface EditPanelProps {
@@ -21,11 +21,7 @@ export default function EditPanel({ nodeId, onSuccess, onClose }: EditPanelProps
   const [email, setEmail] = useState('');
   const [url, setUrl] = useState('');
 
-  useEffect(() => {
-    fetchNode();
-  }, [nodeId]);
-
-  const fetchNode = async () => {
+  const fetchNode = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -50,7 +46,11 @@ export default function EditPanel({ nodeId, onSuccess, onClose }: EditPanelProps
     } finally {
       setLoading(false);
     }
-  };
+  }, [nodeId]);
+
+  useEffect(() => {
+    fetchNode();
+  }, [fetchNode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

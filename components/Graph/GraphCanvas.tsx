@@ -8,9 +8,10 @@ import { InteractionMode } from '@/types';
 import Node3D from './Node3D';
 import Edge3D from './Edge3D';
 import { useForceSimulation } from '@/lib/hooks/useForceSimulation';
-import { calculateFogOfWar } from '@/lib/fogOfWar';
+import { calculateFogOfWar, type VisibilityInfo } from '@/lib/fogOfWar';
 import { computeStableLayout } from '@/lib/graphLayout';
 import DebugOverlay from './DebugOverlay';
+import NodeNameplates from './NodeNameplates';
 import * as THREE from 'three';
 
 interface GraphCanvasProps {
@@ -80,28 +81,31 @@ function CameraController({
   const prevTargetRef = useRef(target);
   const prevRecenterRef = useRef(recenterTrigger);
 
+  // Extract individual target values for stable dependencies
+  const [targetX, targetY, targetZ] = target;
+
   // Initialize camera on first mount
   // No delay needed since positions are pre-computed and stable
   useEffect(() => {
     if (!hasInitialized.current) {
       camera.position.set(
-        target[0],
-        target[1] + 15,
-        target[2] + 25
+        targetX,
+        targetY + 15,
+        targetZ + 25
       );
-      camera.lookAt(target[0], target[1], target[2]);
+      camera.lookAt(targetX, targetY, targetZ);
       hasInitialized.current = true;
       onInitialized();
     }
-  }, [target, camera, onInitialized]);
+  }, [targetX, targetY, targetZ, camera, onInitialized]);
 
   // Trigger animation when target changes OR recenter is clicked
   useEffect(() => {
     if (hasInitialized.current && cameraState === CameraState.USER_CONTROL) {
       const targetChanged =
-        target[0] !== prevTargetRef.current[0] ||
-        target[1] !== prevTargetRef.current[1] ||
-        target[2] !== prevTargetRef.current[2];
+        targetX !== prevTargetRef.current[0] ||
+        targetY !== prevTargetRef.current[1] ||
+        targetZ !== prevTargetRef.current[2];
 
       const recenterTriggered = recenterTrigger !== prevRecenterRef.current;
 
@@ -109,17 +113,17 @@ function CameraController({
         console.log('[CameraController] Starting animation:', targetChanged ? 'target change' : 'recenter');
         startPos.current.copy(camera.position);
         targetPos.current.set(
-          target[0],
-          target[1] + 15,
-          target[2] + 25
+          targetX,
+          targetY + 15,
+          targetZ + 25
         );
         progress.current = 0;
-        prevTargetRef.current = target;
+        prevTargetRef.current = [targetX, targetY, targetZ];
         prevRecenterRef.current = recenterTrigger;
         onAnimationStart();
       }
     }
-  }, [target, cameraState, recenterTrigger, camera, onAnimationStart]);
+  }, [targetX, targetY, targetZ, cameraState, recenterTrigger, camera, onAnimationStart]);
 
   // Animate camera
   useFrame(() => {
@@ -136,7 +140,7 @@ function CameraController({
         : 1 - Math.pow(-2 * progress.current + 2, 2) / 2;
 
       camera.position.lerpVectors(startPos.current, targetPos.current, eased);
-      camera.lookAt(target[0], target[1], target[2]);
+      camera.lookAt(targetX, targetY, targetZ);
     }
   });
 
@@ -158,15 +162,30 @@ function Scene({
   nodeSizeMultiplier = 2.0,
   labelSizeMultiplier = 2.0,
   springStrength = 0.01,
-  cameraFov = 75
-}: GraphCanvasProps & { nodeSizeMultiplier?: number; labelSizeMultiplier?: number; springStrength?: number; cameraFov?: number }) {
+  cameraFov = 75,
+  show3DLabels = true,
+  onSceneReady
+}: GraphCanvasProps & {
+  nodeSizeMultiplier?: number;
+  labelSizeMultiplier?: number;
+  springStrength?: number;
+  cameraFov?: number;
+  show3DLabels?: boolean;
+  onSceneReady?: (data: {
+    camera: THREE.Camera;
+    size: { width: number; height: number };
+    nodes: GraphNode[];
+    visibility: Map<string, VisibilityInfo>;
+    rootNodeId: string | null;
+  }) => void;
+}) {
   const [isPaused, setIsPaused] = useState(false);
   const [cameraState, setCameraState] = useState<CameraState>(CameraState.INITIALIZING);
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const prevCenterRef = useRef(centerNodeId);
   const prevRecenterRef = useRef(recenterTrigger);
   const orbitControlsRef = useRef<any>(null);
-  const { camera, gl } = useThree();
+  const { camera, gl, size } = useThree();
 
   // Store GraphNode objects persistently across renders to prevent displacement
   // The force simulation mutates these objects, so we need to reuse them
@@ -313,6 +332,19 @@ function Scene({
   // Find root node (invited_by is null)
   const rootNodeId = nodes.find((n) => n.invited_by === null)?.id;
 
+  // Update scene data for nameplate rendering
+  useEffect(() => {
+    if (onSceneReady) {
+      onSceneReady({
+        camera,
+        size,
+        nodes: graphData.nodes,
+        visibility,
+        rootNodeId: rootNodeId || null,
+      });
+    }
+  }, [camera, size, graphData.nodes, visibility, rootNodeId, onSceneReady]);
+
   // Handle node dragging
   const handleNodeDragStart = (nodeId: string) => {
     setDraggedNodeId(nodeId);
@@ -402,6 +434,8 @@ function Scene({
             // Size multipliers
             nodeSizeMultiplier={nodeSizeMultiplier}
             labelSizeMultiplier={labelSizeMultiplier}
+            // Label visibility
+            show3DLabels={show3DLabels}
           />
         );
       })}
@@ -436,6 +470,19 @@ export default function GraphCanvas(props: GraphCanvasProps) {
   const [springStrength, setSpringStrength] = useState(0.01);
   const [cameraFov, setCameraFov] = useState(75);
 
+  // Label display toggles
+  const [showNameplates, setShowNameplates] = useState(false);
+  const [show3DLabels, setShow3DLabels] = useState(true);
+
+  // Scene data for nameplate rendering
+  const [sceneData, setSceneData] = useState<{
+    camera: THREE.Camera;
+    size: { width: number; height: number };
+    nodes: GraphNode[];
+    visibility: Map<string, VisibilityInfo>;
+    rootNodeId: string | null;
+  } | null>(null);
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Canvas
@@ -449,8 +496,23 @@ export default function GraphCanvas(props: GraphCanvasProps) {
           labelSizeMultiplier={labelSizeMultiplier}
           springStrength={springStrength}
           cameraFov={cameraFov}
+          show3DLabels={show3DLabels}
+          onSceneReady={setSceneData}
         />
       </Canvas>
+
+      {sceneData && (
+        <NodeNameplates
+          nodes={sceneData.nodes}
+          visibility={sceneData.visibility}
+          centerNodeId={props.centerNodeId}
+          rootNodeId={sceneData.rootNodeId}
+          onNodeClick={props.onNodeClick}
+          camera={sceneData.camera}
+          size={sceneData.size}
+          enabled={showNameplates}
+        />
+      )}
 
       <DebugOverlay
         visible={props.debugVisible}
@@ -472,6 +534,10 @@ export default function GraphCanvas(props: GraphCanvasProps) {
         onLabelSizeChange={setLabelSizeMultiplier}
         onSpringStrengthChange={setSpringStrength}
         onCameraFovChange={setCameraFov}
+        showNameplates={showNameplates}
+        show3DLabels={show3DLabels}
+        onNameplateToggle={() => setShowNameplates(!showNameplates)}
+        on3DLabelToggle={() => setShow3DLabels(!show3DLabels)}
       />
     </div>
   );

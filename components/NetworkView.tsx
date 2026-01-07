@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import type { Node, Edge } from '@/types';
@@ -46,11 +46,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
   // Phase 2: Debug overlay toggle
   const [debugVisible, setDebugVisible] = useState(true);
 
-  useEffect(() => {
-    fetchGraphData();
-  }, []);
-
-  const fetchGraphData = async () => {
+  const fetchGraphData = useCallback(async () => {
     try {
       const supabase = createClient();
 
@@ -79,7 +75,11 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
     } finally {
       setLoading(false);
     }
-  };
+  }, [userNodeId]);
+
+  useEffect(() => {
+    fetchGraphData();
+  }, [fetchGraphData]);
 
   const handleSignOut = async () => {
     const supabase = createClient();

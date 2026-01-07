@@ -24,6 +24,8 @@ interface Node3DProps {
   // Size multipliers
   nodeSizeMultiplier: number;
   labelSizeMultiplier: number;
+  // Label visibility
+  show3DLabels: boolean;
 }
 
 export default function Node3D({
@@ -41,7 +43,8 @@ export default function Node3D({
   onConnectSelect,
   onConnectTarget,
   nodeSizeMultiplier,
-  labelSizeMultiplier
+  labelSizeMultiplier,
+  show3DLabels
 }: Node3DProps) {
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
@@ -270,8 +273,8 @@ export default function Node3D({
         </mesh>
       )}
 
-      {/* Label - always visible */}
-      {finalOpacity > 0.1 && (
+      {/* Label - conditionally visible based on show3DLabels toggle */}
+      {show3DLabels && finalOpacity > 0.1 && (
         <Html distanceFactor={8} position={[0, scale + 0.5, 0]} center>
           <div
             className="px-3 py-1.5 rounded font-medium whitespace-nowrap pointer-events-none"

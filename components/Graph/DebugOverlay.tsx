@@ -22,6 +22,11 @@ interface DebugOverlayProps {
   onLabelSizeChange: (value: number) => void;
   onSpringStrengthChange: (value: number) => void;
   onCameraFovChange: (value: number) => void;
+  // Label display toggles
+  showNameplates: boolean;
+  show3DLabels: boolean;
+  onNameplateToggle: () => void;
+  on3DLabelToggle: () => void;
 }
 
 export default function DebugOverlay({
@@ -44,6 +49,10 @@ export default function DebugOverlay({
   onLabelSizeChange,
   onSpringStrengthChange,
   onCameraFovChange,
+  showNameplates,
+  show3DLabels,
+  onNameplateToggle,
+  on3DLabelToggle,
 }: DebugOverlayProps) {
   if (!visible) return null;
 
@@ -212,6 +221,49 @@ export default function DebugOverlay({
             className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
           />
         </div>
+      </div>
+
+      {/* Label Display Toggles */}
+      <div className="border-t border-white/20 pt-3 mt-3 space-y-2 pointer-events-auto">
+        <div className="text-gray-400 text-xs mb-2 font-semibold">LABEL DISPLAY</div>
+
+        <button
+          onClick={onNameplateToggle}
+          className="w-full px-3 py-2 rounded bg-gray-800 hover:bg-gray-700
+                     transition-colors text-left flex items-center justify-between"
+        >
+          <span className="text-xs font-medium">2D Nameplates</span>
+          <div
+            className={`w-10 h-5 rounded-full transition-colors ${
+              showNameplates ? 'bg-green-500' : 'bg-gray-600'
+            }`}
+          >
+            <div
+              className={`w-4 h-4 bg-white rounded-full transition-transform transform ${
+                showNameplates ? 'translate-x-6 mt-0.5' : 'translate-x-1 mt-0.5'
+              }`}
+            />
+          </div>
+        </button>
+
+        <button
+          onClick={on3DLabelToggle}
+          className="w-full px-3 py-2 rounded bg-gray-800 hover:bg-gray-700
+                     transition-colors text-left flex items-center justify-between"
+        >
+          <span className="text-xs font-medium">3D Labels</span>
+          <div
+            className={`w-10 h-5 rounded-full transition-colors ${
+              show3DLabels ? 'bg-green-500' : 'bg-gray-600'
+            }`}
+          >
+            <div
+              className={`w-4 h-4 bg-white rounded-full transition-transform transform ${
+                show3DLabels ? 'translate-x-6 mt-0.5' : 'translate-x-1 mt-0.5'
+              }`}
+            />
+          </div>
+        </button>
       </div>
     </div>
   );
