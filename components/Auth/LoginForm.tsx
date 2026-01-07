@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('kurt@cotoaga.net');
-  const [password, setPassword] = useState('!mp3riuMalphA');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,6 +29,30 @@ export default function LoginForm() {
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVisitorLogin = async () => {
+    setEmail('visitor@be-part-of.net');
+    setPassword('visitor');
+    setError('');
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: 'visitor@be-part-of.net',
+        password: 'visitor',
+      });
+
+      if (error) throw error;
+
+      router.push('/network');
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in as Visitor');
     } finally {
       setLoading(false);
     }
@@ -89,9 +113,25 @@ export default function LoginForm() {
         </button>
       </form>
 
-      <p className="text-xs text-center mt-6 text-[var(--color-text-secondary)]">
-        Pre-populated with test credentials
-      </p>
+      <div className="mt-4 space-y-3">
+        <button
+          type="button"
+          onClick={handleVisitorLogin}
+          className="w-full btn-secondary"
+          disabled={loading}
+        >
+          Login as Visitor
+        </button>
+
+        <div className="text-center">
+          <a
+            href="mailto:kurt@cotoaga.net?subject=Invitation%20Request%20for%20be-part-of.net"
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Request an invite
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

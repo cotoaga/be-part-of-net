@@ -24,7 +24,7 @@ CREATE TABLE edges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
   to_node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-  relation TEXT NOT NULL CHECK (relation IN ('invited', 'knowing', 'working_with', 'created', 'using')),
+  relation TEXT NOT NULL CHECK (relation IN ('invited', 'knowing', 'created', 'collaborates_on')),
   created_by UUID REFERENCES nodes(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(from_node_id, to_node_id, relation)

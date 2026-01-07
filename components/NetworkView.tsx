@@ -46,6 +46,9 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
   // Phase 2: Debug overlay toggle
   const [debugVisible, setDebugVisible] = useState(true);
 
+  // Visitor mode check
+  const [isVisitor, setIsVisitor] = useState(false);
+
   const fetchGraphData = useCallback(async () => {
     try {
       const supabase = createClient();
@@ -80,6 +83,16 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
   useEffect(() => {
     fetchGraphData();
   }, [fetchGraphData]);
+
+  // Check if current user is Visitor
+  useEffect(() => {
+    const checkVisitor = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsVisitor(user?.email === 'visitor@be-part-of.net');
+    };
+    checkVisitor();
+  }, []);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -220,9 +233,11 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
 
       {/* Control Bar */}
       <div className="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-gray-800 bg-[var(--color-surface)]">
-        <button onClick={handleReset} className="btn-secondary text-sm">
-          Reset Network
-        </button>
+        {!isVisitor && (
+          <button onClick={handleReset} className="btn-secondary text-sm">
+            Reset Network
+          </button>
+        )}
         <button onClick={handleRecenter} className="btn-secondary text-sm">
           Recenter View
         </button>
@@ -238,6 +253,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
         interactionMode={interactionMode}
         physicsPaused={physicsPaused}
         debugVisible={debugVisible}
+        disabled={isVisitor}
         onInvite={() => openPanel(PanelType.INVITE)}
         onCreate={() => openPanel(PanelType.CREATE)}
         onUse={() => openPanel(PanelType.USE)}
@@ -296,6 +312,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
         {selectedNodeId && (
           <InspectorPanel
             nodeId={selectedNodeId}
+            isVisitor={isVisitor}
             onConnect={startConnectMode}
             onEdit={() => openPanel(PanelType.EDIT, selectedNodeId)}
             onDelete={handleDeleteNode}

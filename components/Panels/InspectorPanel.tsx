@@ -5,6 +5,7 @@ import type { Node, Edge } from '@/types';
 
 interface InspectorPanelProps {
   nodeId: string;
+  isVisitor?: boolean;
   onConnect: () => void;
   onEdit: () => void;
   onDelete: () => Promise<void>;
@@ -19,6 +20,7 @@ interface NodeWithEdges {
 
 export default function InspectorPanel({
   nodeId,
+  isVisitor = false,
   onConnect,
   onEdit,
   onDelete,
@@ -182,9 +184,14 @@ export default function InspectorPanel({
                   <span className="text-[var(--color-text-secondary)]"> from:</span>
                   <ul className="ml-4 mt-1 space-y-1">
                     {edges.map((edge) => (
-                      <li key={edge.id} className="text-[var(--color-text)]">
-                        • {/* We'd need to fetch node names, for now show IDs */}
-                        <span className="font-mono text-xs opacity-70">{edge.from_node_id.slice(0, 8)}</span>
+                      <li key={edge.id} className="text-[var(--color-text)] flex items-center gap-2">
+                        •
+                        <span className="font-medium text-sm">
+                          {edge.from_node?.name || 'Unknown'}
+                        </span>
+                        <span className="text-xs text-[var(--color-text-secondary)]">
+                          ({edge.from_node?.type || 'unknown'})
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -207,9 +214,14 @@ export default function InspectorPanel({
                   <span className="text-[var(--color-text-secondary)]"> to:</span>
                   <ul className="ml-4 mt-1 space-y-1">
                     {edges.map((edge) => (
-                      <li key={edge.id} className="text-[var(--color-text)]">
-                        • {/* We'd need to fetch node names, for now show IDs */}
-                        <span className="font-mono text-xs opacity-70">{edge.to_node_id.slice(0, 8)}</span>
+                      <li key={edge.id} className="text-[var(--color-text)] flex items-center gap-2">
+                        •
+                        <span className="font-medium text-sm">
+                          {edge.to_node?.name || 'Unknown'}
+                        </span>
+                        <span className="text-xs text-[var(--color-text-secondary)]">
+                          ({edge.to_node?.type || 'unknown'})
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -226,20 +238,29 @@ export default function InspectorPanel({
 
       {/* Actions */}
       <section className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-800">
-        <button onClick={onConnect} className="btn-primary w-full">
-          Connect to Another Node
-        </button>
-        <button onClick={onEdit} className="btn-secondary w-full">
-          Edit Details
-        </button>
-        {node.type !== 'person' && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="btn-secondary w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-          >
-            {deleting ? 'Deleting...' : 'Delete Node'}
-          </button>
+        {!isVisitor && (
+          <>
+            <button onClick={onConnect} className="btn-primary w-full">
+              Connect to Another Node
+            </button>
+            <button onClick={onEdit} className="btn-secondary w-full">
+              Edit Details
+            </button>
+            {node.type !== 'person' && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="btn-secondary w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                {deleting ? 'Deleting...' : 'Delete Node'}
+              </button>
+            )}
+          </>
+        )}
+        {isVisitor && (
+          <div className="text-sm text-center text-[var(--color-text-secondary)] italic py-2">
+            Read-only mode
+          </div>
         )}
       </section>
     </div>

@@ -24,6 +24,9 @@ export interface Edge {
   relation: RelationType;
   created_by: string | null;
   created_at: string;
+  // Optional joined node data (returned by API)
+  from_node?: Pick<Node, 'id' | 'name' | 'type'>;
+  to_node?: Pick<Node, 'id' | 'name' | 'type'>;
 }
 
 export interface GraphNode extends Node {

@@ -7,6 +7,7 @@ interface ActionBarProps {
   interactionMode: InteractionMode;
   physicsPaused: boolean;
   debugVisible: boolean;
+  disabled?: boolean;
   onInvite: () => void;
   onCreate: () => void;
   onUse: () => void;
@@ -21,6 +22,7 @@ export default function ActionBar({
   interactionMode,
   physicsPaused,
   debugVisible,
+  disabled = false,
   onInvite,
   onCreate,
   onUse,
@@ -38,8 +40,9 @@ export default function ActionBar({
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={onInvite}
+          disabled={disabled}
           className="btn-secondary text-sm"
-          title="Invite a new person to the network"
+          title={disabled ? 'Read-only mode' : 'Invite a new person to the network'}
         >
           <span className="max-md:hidden">Invite</span>
           <span className="md:hidden">👤</span>
@@ -47,8 +50,9 @@ export default function ActionBar({
 
         <button
           onClick={onCreate}
+          disabled={disabled}
           className="btn-secondary text-sm"
-          title="Create a new URL or MCP resource"
+          title={disabled ? 'Read-only mode' : 'Create a new URL or MCP resource'}
         >
           <span className="max-md:hidden">Create</span>
           <span className="md:hidden">➕</span>
@@ -56,8 +60,9 @@ export default function ActionBar({
 
         <button
           onClick={onUse}
+          disabled={disabled}
           className="btn-secondary text-sm"
-          title="Search and use existing resources"
+          title={disabled ? 'Read-only mode' : 'Search and use existing resources'}
         >
           <span className="max-md:hidden">Use</span>
           <span className="md:hidden">🔍</span>
@@ -65,14 +70,16 @@ export default function ActionBar({
 
         <button
           onClick={onConnect}
-          disabled={!hasSelection}
+          disabled={disabled || !hasSelection}
           className={`btn-secondary text-sm ${
             isInConnectMode
               ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
               : ''
           }`}
           title={
-            !hasSelection
+            disabled
+              ? 'Read-only mode'
+              : !hasSelection
               ? 'Select a node first'
               : isInConnectMode
               ? 'Connect mode active - click nodes to connect'
@@ -87,9 +94,15 @@ export default function ActionBar({
 
         <button
           onClick={onEdit}
-          disabled={!hasSelection}
+          disabled={disabled || !hasSelection}
           className="btn-secondary text-sm"
-          title={!hasSelection ? 'Select a node first' : 'Edit selected node'}
+          title={
+            disabled
+              ? 'Read-only mode'
+              : !hasSelection
+              ? 'Select a node first'
+              : 'Edit selected node'
+          }
         >
           <span className="max-md:hidden">Edit</span>
           <span className="md:hidden">✏️</span>
