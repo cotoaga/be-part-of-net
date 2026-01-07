@@ -78,6 +78,9 @@ export async function POST() {
       { id: '00000000-0000-4000-8000-000000000004', name: 'Dave', email: 'dave@example.com', invited_by: kurt?.id },
       { id: '00000000-0000-4000-8000-000000000005', name: 'Carol', email: 'carol@example.com', invited_by: '00000000-0000-4000-8000-000000000004' },
       { id: '00000000-0000-4000-8000-000000000006', name: 'Eddie', email: 'eddie@example.com', invited_by: kurt?.id },
+      { id: '00000000-0000-4000-8000-000000000009', name: 'Freddy', email: 'freddy@example.com', invited_by: '00000000-0000-4000-8000-000000000006' },
+      { id: '00000000-0000-4000-8000-00000000000a', name: 'Garry', email: 'garry@example.com', invited_by: '00000000-0000-4000-8000-000000000009' },
+      { id: '00000000-0000-4000-8000-00000000000b', name: 'Harry', email: 'harry@example.com', invited_by: '00000000-0000-4000-8000-00000000000a' },
     ];
 
     const { error: personsError } = await adminClient.from('nodes').insert(
@@ -97,20 +100,35 @@ export async function POST() {
       );
     }
 
-    // Insert Bob's Website (URL)
-    const { error: websiteError } = await adminClient.from('nodes').insert({
-      id: '00000000-0000-4000-8000-000000000007',
-      type: 'url',
-      name: "Bob's Website",
-      url: 'https://bob.example.com',
-      description: "Bob's personal website",
-      created_by: '00000000-0000-4000-8000-000000000003',
-    });
+    // Insert URL nodes
+    const urlNodes = [
+      {
+        id: '00000000-0000-4000-8000-000000000007',
+        name: "Bob's Website",
+        url: 'https://bob.example.com',
+        description: "Bob's personal website",
+        created_by: '00000000-0000-4000-8000-000000000003',
+      },
+      {
+        id: '00000000-0000-4000-8000-000000000008',
+        name: 'be-part-of.net',
+        url: 'https://be-part-of.net',
+        description: 'The anti-social social network - this very platform (self-reference)',
+        created_by: '00000000-0000-4000-8000-000000000001',
+      },
+    ];
 
-    if (websiteError) {
-      console.error('Website insert error:', websiteError);
+    const { error: urlError } = await adminClient.from('nodes').insert(
+      urlNodes.map((u) => ({
+        ...u,
+        type: 'url',
+      }))
+    );
+
+    if (urlError) {
+      console.error('URL nodes insert error:', urlError);
       return NextResponse.json(
-        { error: `Failed to create website: ${websiteError.message}` },
+        { error: `Failed to create URL nodes: ${urlError.message}` },
         { status: 500 }
       );
     }
@@ -118,18 +136,23 @@ export async function POST() {
     // Insert edges
     const edgeData = [
       // Invitation edges (person → person)
-      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000002', relation: 'invited' },
-      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000004', relation: 'invited' },
-      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000006', relation: 'invited' },
-      { from: '00000000-0000-4000-8000-000000000002', to: '00000000-0000-4000-8000-000000000003', relation: 'invited' },
-      { from: '00000000-0000-4000-8000-000000000004', to: '00000000-0000-4000-8000-000000000005', relation: 'invited' },
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000002', relation: 'invited' }, // Kurt → Alice
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000004', relation: 'invited' }, // Kurt → Dave
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000006', relation: 'invited' }, // Kurt → Eddie
+      { from: '00000000-0000-4000-8000-000000000002', to: '00000000-0000-4000-8000-000000000003', relation: 'invited' }, // Alice → Bob
+      { from: '00000000-0000-4000-8000-000000000004', to: '00000000-0000-4000-8000-000000000005', relation: 'invited' }, // Dave → Carol
+      { from: '00000000-0000-4000-8000-000000000006', to: '00000000-0000-4000-8000-000000000009', relation: 'invited' }, // Eddie → Freddy
+      { from: '00000000-0000-4000-8000-000000000009', to: '00000000-0000-4000-8000-00000000000a', relation: 'invited' }, // Freddy → Garry
+      { from: '00000000-0000-4000-8000-00000000000a', to: '00000000-0000-4000-8000-00000000000b', relation: 'invited' }, // Garry → Harry
 
       // Resource creation (person → url/mcp)
-      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000007', relation: 'created' },
-      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000007', relation: 'collaborates_on' },  // NEW: Bob collaborates on his website
+      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000007', relation: 'created' }, // Bob → Bob's Website
+      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000007', relation: 'collaborates_on' }, // Bob collaborates on his website
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000008', relation: 'created' }, // Kurt → be-part-of.net
+      { from: '00000000-0000-4000-8000-000000000001', to: '00000000-0000-4000-8000-000000000008', relation: 'collaborates_on' }, // Kurt collaborates on be-part-of.net
 
       // Weak connection (person → person)
-      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000005', relation: 'knowing' },
+      { from: '00000000-0000-4000-8000-000000000003', to: '00000000-0000-4000-8000-000000000005', relation: 'knowing' }, // Bob → Carol
     ];
 
     const { error: edgesError } = await adminClient.from('edges').insert(
@@ -153,8 +176,8 @@ export async function POST() {
       success: true,
       message: 'Test data created successfully',
       stats: {
-        nodes: 7,
-        edges: 7,
+        nodes: 11, // Kurt + 7 persons + 2 URLs
+        edges: 13, // 8 invitations + 2 created + 2 collaborates_on + 1 knowing
       },
     });
   } catch (error: any) {
