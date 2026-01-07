@@ -17,6 +17,7 @@ interface NodeNameplatesProps {
   centerNodeId: string | null;
   rootNodeId: string | null;
   onNodeClick: (nodeId: string) => void;
+  onNodeInspect: (nodeId: string) => void;
   camera: THREE.Camera;
   size: { width: number; height: number };
   enabled: boolean;
@@ -28,6 +29,7 @@ export default function NodeNameplates({
   centerNodeId,
   rootNodeId,
   onNodeClick,
+  onNodeInspect,
   camera,
   size,
   enabled
@@ -107,16 +109,12 @@ export default function NodeNameplates({
         const isRoot = node.id === rootNodeId;
 
         return (
-          <button
+          <div
             key={node.id}
-            onClick={(e) => {
-              e.stopPropagation();
-              onNodeClick(node.id);
-            }}
             className="absolute pointer-events-auto transform -translate-x-1/2 translate-y-2
                        px-3 py-1.5 rounded-lg font-medium whitespace-nowrap text-sm
-                       transition-all duration-150 hover:scale-110 hover:shadow-lg
-                       cursor-pointer"
+                       transition-all duration-150 hover:scale-105 hover:shadow-lg
+                       flex items-center gap-2"
             style={{
               left: `${pos.x}px`,
               top: `${pos.y}px`,
@@ -131,8 +129,26 @@ export default function NodeNameplates({
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
-            {node.name}
-          </button>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onNodeClick(node.id);
+              }}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              {node.name}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onNodeInspect(node.id);
+              }}
+              className="text-base hover:scale-125 transition-transform"
+              title="Inspect node"
+            >
+              ℹ️
+            </button>
+          </div>
         );
       })}
     </div>

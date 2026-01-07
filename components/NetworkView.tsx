@@ -272,6 +272,8 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
             centerNodeId={centerNodeId}
             onNodeClick={(nodeId) => {
               setCenterNodeId(nodeId);
+            }}
+            onNodeInspect={(nodeId) => {
               openPanel(PanelType.INSPECTOR, nodeId);
             }}
             recenterTrigger={recenterTrigger}

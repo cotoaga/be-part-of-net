@@ -194,7 +194,7 @@ export default function Node3D({
       return;
     }
 
-    // Phase 2: Priority 2 - Normal click (center + open inspector)
+    // Phase 2: Priority 2 - Normal click (center node only)
     console.log('[Node3D] Normal click on node:', node.name, node.id);
     onClick();
   };

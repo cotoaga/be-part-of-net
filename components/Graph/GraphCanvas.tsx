@@ -19,6 +19,7 @@ interface GraphCanvasProps {
   edges: Edge[];
   centerNodeId: string | null;
   onNodeClick: (nodeId: string) => void;
+  onNodeInspect: (nodeId: string) => void;
   recenterTrigger?: number;
   // Phase 2: Connect mode props
   interactionMode: InteractionMode;
@@ -508,6 +509,7 @@ export default function GraphCanvas(props: GraphCanvasProps) {
           centerNodeId={props.centerNodeId}
           rootNodeId={sceneData.rootNodeId}
           onNodeClick={props.onNodeClick}
+          onNodeInspect={props.onNodeInspect}
           camera={sceneData.camera}
           size={sceneData.size}
           enabled={showNameplates}
