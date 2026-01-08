@@ -56,10 +56,9 @@ export interface User {
 }
 
 // Interaction mode for graph interactions (Phase 2)
+// Note: Connect modes removed - connection flow now uses panel-based selection
 export enum InteractionMode {
   IDLE = 'idle',
-  CONNECT_SELECT = 'connect_select',
-  CONNECT_TARGET = 'connect_target',
 }
 
 // Panel types for single-panel state machine (Phase 2)

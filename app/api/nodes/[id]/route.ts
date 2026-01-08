@@ -5,6 +5,39 @@ import { errorResponse, ApiErrors } from '@/lib/api/errors';
 import { requireAuth, requireOwnership, canDeleteNode } from '@/lib/api/auth';
 
 /**
+ * GET /api/nodes/[id]
+ * Fetch a single node by ID
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createClient();
+    const { id } = await params;
+
+    // Fetch node
+    const { data: node, error } = await supabase
+      .from('nodes')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Failed to fetch node:', error);
+      throw ApiErrors.notFound('Node not found');
+    }
+
+    return NextResponse.json({
+      success: true,
+      node,
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+/**
  * PATCH /api/nodes/[id]
  * Update a node's attributes
  */

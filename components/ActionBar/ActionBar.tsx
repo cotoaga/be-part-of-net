@@ -1,10 +1,11 @@
 'use client';
 
-import { InteractionMode } from '@/types';
+import type { NodeType } from '@/types';
 
 interface ActionBarProps {
   selectedNodeId: string | null;
-  interactionMode: InteractionMode;
+  selectedNodeType?: NodeType;
+  interactionMode: any; // Kept for DebugOverlay compatibility
   physicsPaused: boolean;
   debugVisible: boolean;
   disabled?: boolean;
@@ -19,7 +20,7 @@ interface ActionBarProps {
 
 export default function ActionBar({
   selectedNodeId,
-  interactionMode,
+  selectedNodeType,
   physicsPaused,
   debugVisible,
   disabled = false,
@@ -31,8 +32,8 @@ export default function ActionBar({
   onTogglePause,
   onToggleDebug,
 }: ActionBarProps) {
-  const isInConnectMode = interactionMode !== InteractionMode.IDLE;
   const hasSelection = !!selectedNodeId;
+  const isPersonNode = selectedNodeType === 'person';
 
   return (
     <div className="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-gray-800 bg-[var(--color-surface)] flex-wrap">
@@ -62,33 +63,27 @@ export default function ActionBar({
           onClick={onUse}
           disabled={disabled}
           className="btn-secondary text-sm"
-          title={disabled ? 'Read-only mode' : 'Search and use existing resources'}
+          title={disabled ? 'Read-only mode' : 'Search and collaborate on existing resources'}
         >
-          <span className="max-md:hidden">Use</span>
+          <span className="max-md:hidden">Collaborate</span>
           <span className="md:hidden">🔍</span>
         </button>
 
         <button
           onClick={onConnect}
-          disabled={disabled || !hasSelection}
-          className={`btn-secondary text-sm ${
-            isInConnectMode
-              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-              : ''
-          }`}
+          disabled={disabled || !hasSelection || !isPersonNode}
+          className="btn-secondary text-sm"
           title={
             disabled
               ? 'Read-only mode'
               : !hasSelection
-              ? 'Select a node first'
-              : isInConnectMode
-              ? 'Connect mode active - click nodes to connect'
-              : 'Connect selected node to another'
+              ? 'Select a person node first'
+              : !isPersonNode
+              ? 'Connect only works with person nodes'
+              : 'Create a social connection with another person'
           }
         >
-          <span className="max-md:hidden">
-            {isInConnectMode ? 'Connecting...' : 'Connect'}
-          </span>
+          <span className="max-md:hidden">Connect</span>
           <span className="md:hidden">🔗</span>
         </button>
 

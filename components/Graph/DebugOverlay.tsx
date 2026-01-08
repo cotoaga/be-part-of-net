@@ -18,10 +18,12 @@ interface DebugOverlayProps {
   labelSizeMultiplier: number;
   springStrength: number;
   cameraFov: number;
+  edgeThickness: number;
   onNodeSizeChange: (value: number) => void;
   onLabelSizeChange: (value: number) => void;
   onSpringStrengthChange: (value: number) => void;
   onCameraFovChange: (value: number) => void;
+  onEdgeThicknessChange: (value: number) => void;
   // Label display toggles
   showNameplates: boolean;
   show3DLabels: boolean;
@@ -45,10 +47,12 @@ export default function DebugOverlay({
   labelSizeMultiplier,
   springStrength,
   cameraFov,
+  edgeThickness,
   onNodeSizeChange,
   onLabelSizeChange,
   onSpringStrengthChange,
   onCameraFovChange,
+  onEdgeThicknessChange,
   showNameplates,
   show3DLabels,
   onNameplateToggle,
@@ -218,6 +222,22 @@ export default function DebugOverlay({
             step="5"
             value={cameraFov}
             onChange={(e) => onCameraFovChange(parseFloat(e.target.value))}
+            className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400 text-xs">Edge Thickness</span>
+            <span className="text-xs font-semibold">{edgeThickness.toFixed(1)}px</span>
+          </div>
+          <input
+            type="range"
+            min="1.0"
+            max="10.0"
+            step="0.5"
+            value={edgeThickness}
+            onChange={(e) => onEdgeThicknessChange(parseFloat(e.target.value))}
             className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
           />
         </div>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { Node, Edge } from '@/types';
 import { InteractionMode, PanelType } from '@/types';
 import { softRefetchGraphData } from '@/lib/refetch';
+import { calculateFogOfWar, type VisibilityInfo } from '@/lib/fogOfWar';
 import GraphCanvas from '@/components/Graph/GraphCanvas';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import ActionBar from '@/components/ActionBar/ActionBar';
@@ -16,7 +17,7 @@ import EditPanel from '@/components/Panels/EditPanel';
 import InvitePanel from '@/components/Panels/InvitePanel';
 import CreatePanel from '@/components/Panels/CreatePanel';
 import CollaboratePanel from '@/components/Panels/CollaboratePanel';
-import ConnectPanel from '@/components/Panels/ConnectPanel';
+import ConnectPersonPanel from '@/components/Panels/ConnectPersonPanel';
 
 interface NetworkViewProps {
   userEmail: string;
@@ -36,7 +37,6 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
 
   // Phase 2: Interaction state
   const [interactionMode, setInteractionMode] = useState<InteractionMode>(InteractionMode.IDLE);
-  const [connectSourceId, setConnectSourceId] = useState<string | null>(null);
   const [physicsPaused, setPhysicsPaused] = useState(false);
 
   // Phase 2: Panel state (single panel model)
@@ -45,6 +45,9 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
 
   // Phase 2: Debug overlay toggle
   const [debugVisible, setDebugVisible] = useState(true);
+
+  // Visibility map for fog-of-war filtering
+  const [visibilityMap, setVisibilityMap] = useState<Map<string, VisibilityInfo>>(new Map());
 
   // Visitor mode check
   const [isVisitor, setIsVisitor] = useState(false);
@@ -93,6 +96,14 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
     };
     checkVisitor();
   }, []);
+
+  // Calculate visibility map for fog-of-war filtering
+  useEffect(() => {
+    if (centerNodeId && nodes.length > 0) {
+      const newVisibility = calculateFogOfWar(nodes, edges, centerNodeId);
+      setVisibilityMap(newVisibility);
+    }
+  }, [nodes, edges, centerNodeId]);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -143,7 +154,6 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
     setSelectedNodeId(nodeId || null);
     // Reset connect mode when opening a panel
     setInteractionMode(InteractionMode.IDLE);
-    setConnectSourceId(null);
   };
 
   const closePanel = () => {
@@ -151,40 +161,24 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
     setSelectedNodeId(null);
   };
 
-  const startConnectMode = () => {
-    setInteractionMode(InteractionMode.CONNECT_SELECT);
-    setConnectSourceId(null);
-    // Close any open panels
-    setActivePanel(PanelType.NONE);
-  };
+  // Handle Connect button click - open panel with filtered person list
+  const handleConnectButtonClick = () => {
+    if (!selectedNodeId) return;
 
-  const exitConnectMode = () => {
-    setInteractionMode(InteractionMode.IDLE);
-    setConnectSourceId(null);
-  };
+    const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+    if (selectedNode?.type !== 'person') {
+      return; // Button should be disabled anyway
+    }
 
-  // Phase 2: Connect mode handlers
-  const handleConnectSelect = (nodeId: string) => {
-    setConnectSourceId(nodeId);
-    setInteractionMode(InteractionMode.CONNECT_TARGET);
-  };
-
-  const handleConnectTarget = (nodeId: string) => {
-    setSelectedNodeId(nodeId);
-    setActivePanel(PanelType.CONNECT);
-    // Keep connect mode active until panel closes
+    openPanel(PanelType.CONNECT, selectedNodeId);
   };
 
   // Phase 2: ESC key listener (single listener for all)
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        // Priority 1: Exit connect mode
-        if (interactionMode !== InteractionMode.IDLE) {
-          exitConnectMode();
-        }
-        // Priority 2: Close panel
-        else if (activePanel !== PanelType.NONE) {
+        // Close panel
+        if (activePanel !== PanelType.NONE) {
           closePanel();
         }
       }
@@ -192,11 +186,9 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
 
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [interactionMode, activePanel]);
+  }, [activePanel]);
 
-  // Find source and target nodes for ConnectPanel
-  const sourceNode = nodes.find((n) => n.id === connectSourceId);
-  const targetNode = nodes.find((n) => n.id === selectedNodeId);
+  // Find selected node for passing to components
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   // Handle delete node
@@ -250,6 +242,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
       {/* Action Bar */}
       <ActionBar
         selectedNodeId={selectedNodeId}
+        selectedNodeType={selectedNode?.type}
         interactionMode={interactionMode}
         physicsPaused={physicsPaused}
         debugVisible={debugVisible}
@@ -257,7 +250,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
         onInvite={() => openPanel(PanelType.INVITE)}
         onCreate={() => openPanel(PanelType.CREATE)}
         onUse={() => openPanel(PanelType.USE)}
-        onConnect={startConnectMode}
+        onConnect={handleConnectButtonClick}
         onEdit={() => openPanel(PanelType.EDIT, selectedNodeId!)}
         onTogglePause={() => setPhysicsPaused((prev) => !prev)}
         onToggleDebug={() => setDebugVisible((prev) => !prev)}
@@ -288,15 +281,12 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
             centerNodeId={centerNodeId}
             onNodeClick={(nodeId) => {
               setCenterNodeId(nodeId);
+              setSelectedNodeId(nodeId);
             }}
             onNodeInspect={(nodeId) => {
               openPanel(PanelType.INSPECTOR, nodeId);
             }}
             recenterTrigger={recenterTrigger}
-            interactionMode={interactionMode}
-            connectSourceId={connectSourceId}
-            onConnectSelect={handleConnectSelect}
-            onConnectTarget={handleConnectTarget}
             physicsPaused={physicsPaused}
             debugVisible={debugVisible}
           />
@@ -313,7 +303,7 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
           <InspectorPanel
             nodeId={selectedNodeId}
             isVisitor={isVisitor}
-            onConnect={startConnectMode}
+            onConnect={handleConnectButtonClick}
             onEdit={() => openPanel(PanelType.EDIT, selectedNodeId)}
             onDelete={handleDeleteNode}
             onRefetch={handleRefetch}
@@ -380,24 +370,17 @@ export default function NetworkView({ userEmail, userNodeId, userName }: Network
 
       <PanelWrapper
         isOpen={activePanel === PanelType.CONNECT}
-        onClose={() => {
-          closePanel();
-          exitConnectMode();
-        }}
-        title="Connect Nodes"
+        onClose={closePanel}
+        title="Connect to Person"
       >
-        {sourceNode && targetNode && (
-          <ConnectPanel
-            sourceNode={sourceNode}
-            targetNode={targetNode}
-            onSuccess={async () => {
-              await handleRefetch();
-              exitConnectMode();
-            }}
-            onClose={() => {
-              closePanel();
-              exitConnectMode();
-            }}
+        {selectedNodeId && (
+          <ConnectPersonPanel
+            sourceNodeId={selectedNodeId}
+            nodes={nodes}
+            edges={edges}
+            visibility={visibilityMap}
+            onSuccess={handleRefetch}
+            onClose={closePanel}
           />
         )}
       </PanelWrapper>

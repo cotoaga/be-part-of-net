@@ -8,9 +8,10 @@ import * as THREE from 'three';
 interface Edge3DProps {
   edge: GraphEdge;
   opacity: number;
+  lineWidth?: number;
 }
 
-export default function Edge3D({ edge, opacity }: Edge3DProps) {
+export default function Edge3D({ edge, opacity, lineWidth = 1 }: Edge3DProps) {
   const { source, target } = edge;
   const arrowRef = useRef<Mesh>(null);
   const lineRef = useRef<any>(null);
@@ -57,7 +58,7 @@ export default function Edge3D({ edge, opacity }: Edge3DProps) {
           [target.x, target.y, target.z],
         ]}
         color="#10B981" // Emerald
-        lineWidth={1}
+        lineWidth={lineWidth}
         opacity={opacity * 0.4}
         transparent
       />

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import type { Node, Edge, GraphNode, GraphEdge } from '@/types';
-import { InteractionMode } from '@/types';
 import Node3D from './Node3D';
 import Edge3D from './Edge3D';
 import { useForceSimulation } from '@/lib/hooks/useForceSimulation';
@@ -21,11 +20,6 @@ interface GraphCanvasProps {
   onNodeClick: (nodeId: string) => void;
   onNodeInspect: (nodeId: string) => void;
   recenterTrigger?: number;
-  // Phase 2: Connect mode props
-  interactionMode: InteractionMode;
-  connectSourceId: string | null;
-  onConnectSelect: (nodeId: string) => void;
-  onConnectTarget: (nodeId: string) => void;
   // Phase 2: Physics control
   physicsPaused: boolean;
   // Phase 2: Debug visibility
@@ -154,16 +148,13 @@ function Scene({
   centerNodeId,
   onNodeClick,
   recenterTrigger,
-  interactionMode,
-  connectSourceId,
-  onConnectSelect,
-  onConnectTarget,
   physicsPaused,
   onDebugUpdate,
   nodeSizeMultiplier = 2.0,
   labelSizeMultiplier = 2.0,
   springStrength = 0.01,
   cameraFov = 75,
+  edgeThickness = 2.0,
   show3DLabels = true,
   onSceneReady
 }: GraphCanvasProps & {
@@ -171,6 +162,7 @@ function Scene({
   labelSizeMultiplier?: number;
   springStrength?: number;
   cameraFov?: number;
+  edgeThickness?: number;
   show3DLabels?: boolean;
   onSceneReady?: (data: {
     camera: THREE.Camera;
@@ -308,13 +300,12 @@ function Scene({
     return { nodes: graphNodes, edges: graphEdges };
   }, [nodes, edges]);
 
-  // Run force simulation (pause when dragging or user manually paused or in connect mode)
-  const isInConnectMode = interactionMode !== InteractionMode.IDLE;
+  // Run force simulation (pause when dragging or user manually paused)
   useForceSimulation(
     graphData.nodes,
     graphData.edges,
     { springStrength },
-    isPaused || !!draggedNodeId || physicsPaused || isInConnectMode
+    isPaused || !!draggedNodeId || physicsPaused
   );
 
   // Calculate fog of war
@@ -407,7 +398,7 @@ function Scene({
 
         if (opacity === 0) return null;
 
-        return <Edge3D key={edge.id} edge={edge} opacity={opacity} />;
+        return <Edge3D key={edge.id} edge={edge} opacity={opacity} lineWidth={edgeThickness} />;
       })}
 
       {/* Render nodes */}
@@ -427,11 +418,6 @@ function Scene({
             onDrag={handleNodeDrag}
             onDragEnd={handleNodeDragEnd}
             isDragged={draggedNodeId === node.id}
-            // Phase 2: Connect mode props
-            interactionMode={interactionMode}
-            connectSourceId={connectSourceId}
-            onConnectSelect={onConnectSelect}
-            onConnectTarget={onConnectTarget}
             // Size multipliers
             nodeSizeMultiplier={nodeSizeMultiplier}
             labelSizeMultiplier={labelSizeMultiplier}
@@ -443,7 +429,7 @@ function Scene({
 
       <OrbitControls
         ref={orbitControlsRef}
-        enabled={cameraState === CameraState.USER_CONTROL && !draggedNodeId && !isInConnectMode}
+        enabled={cameraState === CameraState.USER_CONTROL && !draggedNodeId}
         enableDamping
         dampingFactor={0.05}
         rotateSpeed={0.5}
@@ -470,10 +456,11 @@ export default function GraphCanvas(props: GraphCanvasProps) {
   const [labelSizeMultiplier, setLabelSizeMultiplier] = useState(2.0);
   const [springStrength, setSpringStrength] = useState(0.01);
   const [cameraFov, setCameraFov] = useState(75);
+  const [edgeThickness, setEdgeThickness] = useState(2.0);
 
   // Label display toggles
-  const [showNameplates, setShowNameplates] = useState(false);
-  const [show3DLabels, setShow3DLabels] = useState(true);
+  const [showNameplates, setShowNameplates] = useState(true);
+  const [show3DLabels, setShow3DLabels] = useState(false);
 
   // Scene data for nameplate rendering
   const [sceneData, setSceneData] = useState<{
@@ -497,6 +484,7 @@ export default function GraphCanvas(props: GraphCanvasProps) {
           labelSizeMultiplier={labelSizeMultiplier}
           springStrength={springStrength}
           cameraFov={cameraFov}
+          edgeThickness={edgeThickness}
           show3DLabels={show3DLabels}
           onSceneReady={setSceneData}
         />
@@ -526,16 +514,18 @@ export default function GraphCanvas(props: GraphCanvasProps) {
         edgeCount={debugInfo.edgeCount}
         centerNodeId={props.centerNodeId}
         centerNodeName={props.nodes.find(n => n.id === props.centerNodeId)?.name}
-        interactionMode={props.interactionMode}
+        interactionMode={0 as any}
         selectedNodeName={undefined}
         nodeSizeMultiplier={nodeSizeMultiplier}
         labelSizeMultiplier={labelSizeMultiplier}
         springStrength={springStrength}
         cameraFov={cameraFov}
+        edgeThickness={edgeThickness}
         onNodeSizeChange={setNodeSizeMultiplier}
         onLabelSizeChange={setLabelSizeMultiplier}
         onSpringStrengthChange={setSpringStrength}
         onCameraFovChange={setCameraFov}
+        onEdgeThicknessChange={setEdgeThickness}
         showNameplates={showNameplates}
         show3DLabels={show3DLabels}
         onNameplateToggle={() => setShowNameplates(!showNameplates)}

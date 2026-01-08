@@ -26,20 +26,19 @@ export default function EditPanel({ nodeId, onSuccess, onClose }: EditPanelProps
       setLoading(true);
       setError(null);
 
-      // Fetch from nodes-search to get node details
-      const response = await fetch(`/api/nodes-search?url=__id__${nodeId}`);
+      // Fetch node directly by ID
+      const response = await fetch(`/api/nodes/${nodeId}`);
       const result = await response.json();
 
-      if (response.ok && result.nodes?.length > 0) {
-        const nodeData = result.nodes[0];
+      if (response.ok && result.node) {
+        const nodeData = result.node;
         setNode(nodeData);
         setName(nodeData.name || '');
         setDescription(nodeData.description || '');
         setEmail(nodeData.email || '');
         setUrl(nodeData.url || '');
       } else {
-        // Fallback: try direct fetch (though we don't have GET /api/nodes/[id] endpoint)
-        setError('Node not found');
+        setError(result.error || 'Node not found');
       }
     } catch (err) {
       setError('Network error');
