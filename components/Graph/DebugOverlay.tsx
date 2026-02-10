@@ -64,13 +64,7 @@ export default function DebugOverlay({
   let mode = 'UNKNOWN';
   let modeColor = 'bg-gray-500';
 
-  if (interactionMode === InteractionMode.CONNECT_SELECT) {
-    mode = 'CONNECT: SELECT SOURCE';
-    modeColor = 'bg-cyan-500';
-  } else if (interactionMode === InteractionMode.CONNECT_TARGET) {
-    mode = 'CONNECT: SELECT TARGET';
-    modeColor = 'bg-cyan-500';
-  } else if (cameraState === 'animating') {
+  if (cameraState === 'animating') {
     mode = 'ANIMATING';
     modeColor = 'bg-yellow-500';
   } else if (isDragging) {
@@ -155,9 +149,6 @@ export default function DebugOverlay({
         <div>SPIN/ZOOM: Drag/scroll to move camera</div>
         <div>DRAG NODE: Click+drag node to reposition</div>
         <div>SELECT: Click node to center view</div>
-        {interactionMode !== InteractionMode.IDLE && (
-          <div className="text-cyan-400">CONNECT: Click nodes to link them</div>
-        )}
       </div>
 
       {/* Size Controls */}
